@@ -1,0 +1,8 @@
+version: '3.8'
+
+services:
+  sampleapi:
+    environment:
+      ASPNETCORE_ENVIRONMENT: "Development" 
+    volumes: #this avoids restoring the nuget packages, specially the SqlClient (EF), because in open networks these packages are big and cannot be restored
+      - C:\Users\mark_\.nuget\packages:/root/.nuget/packages:ro

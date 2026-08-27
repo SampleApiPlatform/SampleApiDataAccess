@@ -1,0 +1,42 @@
+﻿# --- Build & Output ---
+bin/
+obj/
+publish/
+dist/
+TestResults/
+
+# --- IDEs ---
+.vs/
+.vscode/
+.idea/
+
+# --- Dev Containers ---
+.devcontainer/
+
+# --- Logs & Temp ---
+*.log
+*.tmp
+*.bak
+*.old
+*.cache
+
+# --- Databases ---
+*.db
+*.db-shm
+*.db-wal
+
+# --- NuGet Packages ---
+*.nupkg
+*.snupkg
+
+# --- Coverage ---
+*.coverage
+*.coveragexml
+
+# --- User-specific ---
+*.user
+launchSettings.json
+
+# --- Environment Files ---
+.env
+.env.*

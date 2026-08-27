@@ -1,0 +1,126 @@
+trigger:
+- main
+
+pool:
+  vmImage: ubuntu-latest
+
+variables:
+- group: New variable group 27-Jul
+
+- name: solution
+  value: '**/*.sln'
+
+- name: buildPlatform
+  value: 'Any CPU'
+
+- name: buildConfiguration
+  value: 'Release'
+
+steps:
+
+# ---------------------------------------------------------
+# Restore
+# ---------------------------------------------------------
+- task: DotNetCoreCLI@2
+  displayName: Restore packages
+  inputs:
+    command: restore
+    projects: '$(solution)'
+
+# ---------------------------------------------------------
+# Build
+# ---------------------------------------------------------
+- task: DotNetCoreCLI@2
+  displayName: Build solution
+  inputs:
+    command: build
+    projects: '$(solution)'
+    arguments: '--configuration $(buildConfiguration)'
+
+# ---------------------------------------------------------
+# Build EF Core migration bundle
+# ---------------------------------------------------------
+- task: DotNetCoreCLI@2
+  displayName: Build EF migration bundle
+  inputs:
+    command: custom
+    custom: ef
+    arguments: "migrations bundle --project SampleApi --output efbundle"
+
+# ---------------------------------------------------------
+# ⭐ NEW: Run EF migration bundle against Azure SQL
+# ---------------------------------------------------------
+- task: Bash@3
+  displayName: Run EF migration bundle
+  inputs:
+    targetType: inline
+    script: |
+      echo "Running EF migration bundle..."
+      chmod +x efbundle
+
+      ./efbundle \
+        --connection "$(sampleapiDBConnectionstring)"
+# ---------------------------------------------------------
+# Test + Coverage
+# ---------------------------------------------------------
+- task: DotNetCoreCLI@2
+  displayName: Run tests with coverage
+  inputs:
+    command: test
+    projects: '$(solution)'
+    arguments: '--configuration $(buildConfiguration) --collect:"XPlat Code Coverage"'
+
+# ---------------------------------------------------------
+# Publish coverage
+# ---------------------------------------------------------
+- task: PublishCodeCoverageResults@1
+  displayName: Publish coverage
+  inputs:
+    codeCoverageTool: Cobertura
+    summaryFileLocation: '$(Agent.TempDirectory)/**/coverage.cobertura.xml'
+    reportDirectory: '$(Agent.TempDirectory)'
+
+# ---------------------------------------------------------
+# Build Docker image (Linux)
+# ---------------------------------------------------------
+- task: Docker@2
+  displayName: Build Docker image
+  inputs:
+    command: build
+    Dockerfile: SampleApi/Dockerfile
+    repository: sampleapiregistry.azurecr.io/sampleapi
+    tags: |
+      latest
+
+# ---------------------------------------------------------
+# Login to ACR
+# ---------------------------------------------------------
+- task: AzureCLI@2
+  displayName: Login to ACR
+  inputs:
+    azureSubscription: 'Azure subscription 1(c13b401c-dde4-4298-ad6c-3ef836f847d5)'
+    scriptType: bash
+    scriptLocation: inlineScript
+    inlineScript: |
+      az acr login --name sampleapiregistry
+
+# ---------------------------------------------------------
+# Push Docker image
+# ---------------------------------------------------------
+- script: |
+    docker push sampleapiregistry.azurecr.io/sampleapi:latest
+  displayName: Push Docker image
+
+# ---------------------------------------------------------
+# Inject SQL connection string secret into ACA
+# ---------------------------------------------------------
+- task: AzureCLI@2
+  displayName: "Set ACA secret: DefaultConnectionString"
+  inputs:
+    azureSubscription: 'Azure subscription 1(c13b401c-dde4-4298-ad6c-3ef836f847d5)'
+    scriptType: bash
+    scriptLocation: inlineScript
+    inlineScript: |
+      echo "Setting ACA secret DefaultConnectionString..."
+      az containerapp secret set \
+        --name sampleapi

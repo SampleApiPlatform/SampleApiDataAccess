@@ -1,0 +1,17 @@
+version: '3.8'
+
+services:
+  sampleapi:
+    container_name: sampledataaccessapi
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - "8080:8080"
+    environment:
+      ConnectionStrings__DefaultConnection: ${ConnectionStrings__DefaultConnection}
+      Jwt__Key: ${Jwt__Key}
+      Jwt__Issuer: ${Jwt__Issuer}
+      Jwt__Audience: ${Jwt__Audience}
+      ASPNETCORE_ENVIRONMENT: "Development"
+
