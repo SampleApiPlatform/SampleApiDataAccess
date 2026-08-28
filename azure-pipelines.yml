@@ -4,22 +4,114 @@ trigger:
 pool:
   vmImage: ubuntu-latest
 
-steps:
-- task: DockerInstaller@0
+variables:
+- group: New variable group 27-Jul
 
+- name: solution
+  value: '**/*.sln'
+
+- name: buildPlatform
+  value: 'Any CPU'
+
+- name: buildConfiguration
+  value: 'Release'
+
+steps:
+
+# ---------------------------------------------------------
+# Restore
+# ---------------------------------------------------------
+- task: DotNetCoreCLI@2
+  displayName: Restore packages
+  inputs:
+    command: restore
+    projects: '$(solution)'
+
+# ---------------------------------------------------------
+# Build
+# ---------------------------------------------------------
+- task: DotNetCoreCLI@2
+  displayName: Build solution
+  inputs:
+    command: build
+    projects: '$(solution)'
+    arguments: '--configuration $(buildConfiguration)'
+
+# ---------------------------------------------------------
+# Build EF Core migration bundle
+# ---------------------------------------------------------
+- task: DotNetCoreCLI@2
+  displayName: Build EF migration bundle
+  inputs:
+    command: custom
+    custom: ef
+    arguments: "migrations bundle --project SampleDataAccessApi --output efbundle"
+
+# ---------------------------------------------------------
+# Run EF migration bundle against Azure SQL
+# ---------------------------------------------------------
+- task: Bash@3
+  displayName: Run EF migration bundle
+  inputs:
+    targetType: inline
+    script: |
+      echo "Running EF migration bundle..."
+      chmod +x efbundle
+
+      ./efbundle \
+        --connection "$(sampleapiDBConnectionstring)"
+
+# ---------------------------------------------------------
+# Test + Coverage
+# ---------------------------------------------------------
+- task: DotNetCoreCLI@2
+  displayName: Run tests with coverage
+  inputs:
+    command: test
+    projects: '$(solution)'
+    arguments: '--configuration $(buildConfiguration) --collect:"XPlat Code Coverage"'
+
+# ---------------------------------------------------------
+# Publish coverage
+# ---------------------------------------------------------
+- task: PublishCodeCoverageResults@1
+  displayName: Publish coverage
+  inputs:
+    codeCoverageTool: Cobertura
+    summaryFileLocation: '$(Agent.TempDirectory)/**/coverage.cobertura.xml'
+    reportDirectory: '$(Agent.TempDirectory)'
+
+# ---------------------------------------------------------
+# Install Docker
+# ---------------------------------------------------------
+- task: DockerInstaller@0
+  displayName: Install Docker
+
+# ---------------------------------------------------------
+# Login to Docker Hub
+# ---------------------------------------------------------
 - script: |
     echo "$(DOCKERHUB_TOKEN)" | docker login -u "$(DOCKERHUB_USERNAME)" --password-stdin
   displayName: Login to Docker Hub
 
+# ---------------------------------------------------------
+# Build Docker image (Linux)
+# ---------------------------------------------------------
 - script: |
-    docker build -t $(DOCKERHUB_USERNAME)/sampleapi:$(Build.BuildId) .
+    docker build -t $(DOCKERHUB_USERNAME)/sampledataaccessapi:$(Build.BuildId) .
   displayName: Build Docker image
 
+# ---------------------------------------------------------
+# Push Docker image
+# ---------------------------------------------------------
 - script: |
-    docker push $(DOCKERHUB_USERNAME)/sampleapi:$(Build.BuildId)
+    docker push $(DOCKERHUB_USERNAME)/sampledataaccessapi:$(Build.BuildId)
   displayName: Push Docker image
 
+# ---------------------------------------------------------
+# Tag & Push latest
+# ---------------------------------------------------------
 - script: |
-    docker tag $(DOCKERHUB_USERNAME)/sampleapi:$(Build.BuildId) $(DOCKERHUB_USERNAME)/sampleapi:latest
-    docker push $(DOCKERHUB_USERNAME)/sampleapi:latest
+    docker tag $(DOCKERHUB_USERNAME)/sampledataaccessapi:$(Build.BuildId) $(DOCKERHUB_USERNAME)/sampledataaccessapi:latest
+    docker push $(DOCKERHUB_USERNAME)/sampledataaccessapi:latest
   displayName: Push latest tag
