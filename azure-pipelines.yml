@@ -40,6 +40,14 @@ steps:
     arguments: '--configuration $(buildConfiguration) --packages $(Build.SourcesDirectory)/.nuget'
 
 # ---------------------------------------------------------
+# Build project to reveal errors
+# ---------------------------------------------------------
+- script: |
+    cd SampleDataAccessApi
+    dotnet build SampleDataAccessApi.csproj
+  displayName: Build API project (debug errors)
+
+# ---------------------------------------------------------
 # Install dotnet-ef (required on Azure DevOps agents)
 # ---------------------------------------------------------
 - script: |
