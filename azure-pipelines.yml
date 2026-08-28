@@ -19,7 +19,15 @@ variables:
 steps:
 
 # ---------------------------------------------------------
-# Restore (including NuGet - arguments)
+# Fix NuGet permission issue
+# ---------------------------------------------------------
+- script: |
+    export NUGET_PACKAGES=$(Build.SourcesDirectory)/.nuget
+    echo "Using NUGET_PACKAGES=$NUGET_PACKAGES"
+  displayName: Configure NuGet package folder
+
+# ---------------------------------------------------------
+# Restore (with correct NuGet folder)
 # ---------------------------------------------------------
 - task: DotNetCoreCLI@2
   displayName: Restore packages
@@ -28,9 +36,8 @@ steps:
     projects: '$(solution)'
     arguments: '--packages $(Build.SourcesDirectory)/.nuget'
 
-
 # ---------------------------------------------------------
-# Build (including NuGet - arguments)
+# Build (with correct NuGet folder)
 # ---------------------------------------------------------
 - task: DotNetCoreCLI@2
   displayName: Build solution
@@ -43,6 +50,7 @@ steps:
 # Build project to reveal any compile errors
 # ---------------------------------------------------------
 - script: |
+    export NUGET_PACKAGES=$(Build.SourcesDirectory)/.nuget
     cd SampleDataAccessApi
     dotnet build SampleDataAccessApi.csproj
   displayName: Build API project (debug errors)
@@ -51,6 +59,7 @@ steps:
 # Install dotnet-ef
 # ---------------------------------------------------------
 - script: |
+    export NUGET_PACKAGES=$(Build.SourcesDirectory)/.nuget
     dotnet tool install --global dotnet-ef
     export PATH="$PATH:/home/vsts/.dotnet/tools"
     dotnet ef --version
@@ -60,8 +69,12 @@ steps:
 # Build EF Core migration bundle using MoviesDbContext
 # ---------------------------------------------------------
 - script: |
+    export NUGET_PACKAGES=$(Build.SourcesDirectory)/.nuget
     cd SampleDataAccessApi
-    dotnet ef migrations bundle --project SampleDataAccessApi.csproj --context MoviesDbContext --output ../efbundle
+    dotnet ef migrations bundle \
+      --project SampleDataAccessApi.csproj \
+      --context MoviesDbContext \
+      --output ../efbundle
   displayName: Build EF migration bundle
 
 # ---------------------------------------------------------
