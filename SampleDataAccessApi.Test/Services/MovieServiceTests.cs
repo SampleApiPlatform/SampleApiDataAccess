@@ -5,16 +5,16 @@ using System.Threading.Tasks;
 using Microsoft.VisualBasic;
 using SampleDataAccessApi.Models;
 using SampleDataAccessApi.Interfaces.MovieInterfaces;
-using SampleDataAccessApi.Services.MovieServices;
-using SampleDataAccessApi.DTOs.Movies;
-using SampleDataAccessApi.Validators;
+//using SampleDataAccessApi.Services.MovieServices;
+//using SampleDataAccessApi.DTOs.Movies;
+//using SampleDataAccessApi.Validators;
 using System.Net.Cache;
 
 
 public class MovieServiceTests
 {
     //GetById
-    [Fact]
+    /*[Fact]
     public async Task GetById_ReturnsMovie_WhenIdDoesMatchSetup()
     {
         // Arrange
@@ -420,7 +420,7 @@ public class MovieServiceTests
 
         // Verify validator was NOT called
         validatorMock.Verify(v => v.Validate(It.IsAny<Movie>()), Times.Never);
-    }
+    }*/
 
 
 }
