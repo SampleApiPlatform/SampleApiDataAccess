@@ -40,23 +40,22 @@ steps:
     arguments: '--configuration $(buildConfiguration) --packages $(Build.SourcesDirectory)/.nuget'
 
 # ---------------------------------------------------------
-# Install dotnet-ef in AzureDevOps 
+# Install dotnet-ef (required on Azure DevOps agents)
 # ---------------------------------------------------------
 - script: |
     dotnet tool install --global dotnet-ef
     export PATH="$PATH:/home/vsts/.dotnet/tools"
     dotnet ef --version
-  displayName: Install dotnet-e
+  displayName: Install dotnet-ef
 
 # ---------------------------------------------------------
 # Build EF Core migration bundle
+# IMPORTANT: Run inside the project folder so EF does NOT load the .sln
 # ---------------------------------------------------------
-- task: DotNetCoreCLI@2
+- script: |
+    cd SampleDataAccessApi
+    dotnet ef migrations bundle --project SampleDataAccessApi.csproj --output ../efbundle
   displayName: Build EF migration bundle
-  inputs:
-    command: custom
-    custom: ef
-    arguments: "migrations bundle --project SampleDataAccessApi/SampleDataAccessApi.csproj --output efbundle"
 
 
 # ---------------------------------------------------------
