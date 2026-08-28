@@ -41,16 +41,16 @@ builder.Services.AddDbContext<MoviesDbContext>(options =>
     )
 );
 //Another database from another area of the business
-builder.Services.AddDbContext<BillingDbContext>(options =>
-    options.UseSqlServer(
-        builder.Configuration.GetConnectionString("DefaultConnection"),
-        sqlOptions => sqlOptions.EnableRetryOnFailure(
-            maxRetryCount: 5,
-            maxRetryDelay: TimeSpan.FromSeconds(10),
-            errorNumbersToAdd: null
-        )
-    )
-);
+//builder.Services.AddDbContext<BillingDbContext>(options =>
+//    options.UseSqlServer(
+//        builder.Configuration.GetConnectionString("DefaultConnection"),
+//        sqlOptions => sqlOptions.EnableRetryOnFailure(
+//            maxRetryCount: 5,
+//            maxRetryDelay: TimeSpan.FromSeconds(10),
+//            errorNumbersToAdd: null
+//        )
+//    )
+//);
 
 //Swagger
 builder.Services.AddSwaggerDocumentation();
