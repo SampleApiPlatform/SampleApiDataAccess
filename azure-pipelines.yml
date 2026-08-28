@@ -39,6 +39,14 @@ steps:
     projects: '$(solution)'
     arguments: '--configuration $(buildConfiguration) --packages $(Build.SourcesDirectory)/.nuget'
 
+# ---------------------------------------------------------
+# Install dotnet-ef in AzureDevOps 
+# ---------------------------------------------------------
+- script: |
+    dotnet tool install --global dotnet-ef
+    export PATH="$PATH:/home/vsts/.dotnet/tools"
+    dotnet ef --version
+  displayName: Install dotnet-e
 
 # ---------------------------------------------------------
 # Build EF Core migration bundle
