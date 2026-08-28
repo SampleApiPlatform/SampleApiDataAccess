@@ -19,23 +19,26 @@ variables:
 steps:
 
 # ---------------------------------------------------------
-# Restore
+# Restore (including NuGet - arguments)
 # ---------------------------------------------------------
 - task: DotNetCoreCLI@2
   displayName: Restore packages
   inputs:
     command: restore
     projects: '$(solution)'
+    arguments: '--packages $(Build.SourcesDirectory)/.nuget'
+
 
 # ---------------------------------------------------------
-# Build
+# Build (including NuGet - arguments)
 # ---------------------------------------------------------
 - task: DotNetCoreCLI@2
   displayName: Build solution
   inputs:
     command: build
     projects: '$(solution)'
-    arguments: '--configuration $(buildConfiguration)'
+    arguments: '--configuration $(buildConfiguration) --packages $(Build.SourcesDirectory)/.nuget'
+
 
 # ---------------------------------------------------------
 # Build EF Core migration bundle
