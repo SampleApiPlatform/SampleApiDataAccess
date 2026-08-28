@@ -40,7 +40,7 @@ steps:
     arguments: '--configuration $(buildConfiguration) --packages $(Build.SourcesDirectory)/.nuget'
 
 # ---------------------------------------------------------
-# Build project to reveal errors
+# Build project to reveal any compile errors
 # ---------------------------------------------------------
 - script: |
     cd SampleDataAccessApi
@@ -48,7 +48,7 @@ steps:
   displayName: Build API project (debug errors)
 
 # ---------------------------------------------------------
-# Install dotnet-ef (required on Azure DevOps agents)
+# Install dotnet-ef
 # ---------------------------------------------------------
 - script: |
     dotnet tool install --global dotnet-ef
@@ -57,14 +57,12 @@ steps:
   displayName: Install dotnet-ef
 
 # ---------------------------------------------------------
-# Build EF Core migration bundle
-# IMPORTANT: Run inside the project folder so EF does NOT load the .sln
+# Build EF Core migration bundle using MoviesDbContext
 # ---------------------------------------------------------
 - script: |
     cd SampleDataAccessApi
-    dotnet ef migrations bundle --project SampleDataAccessApi.csproj --output ../efbundle
+    dotnet ef migrations bundle --project SampleDataAccessApi.csproj --context MoviesDbContext --output ../efbundle
   displayName: Build EF migration bundle
-
 
 # ---------------------------------------------------------
 # Run EF migration bundle against Azure SQL
