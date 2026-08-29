@@ -27,7 +27,7 @@ steps:
   displayName: Configure NuGet package folder
 
 # ---------------------------------------------------------
-# Restore (with correct NuGet folder)
+# Restore
 # ---------------------------------------------------------
 - task: DotNetCoreCLI@2
   displayName: Restore packages
@@ -37,7 +37,7 @@ steps:
     arguments: '--packages $(Build.SourcesDirectory)/.nuget'
 
 # ---------------------------------------------------------
-# Build (with correct NuGet folder)
+# Build
 # ---------------------------------------------------------
 - task: DotNetCoreCLI@2
   displayName: Build solution
@@ -47,7 +47,7 @@ steps:
     arguments: '--configuration $(buildConfiguration) --packages $(Build.SourcesDirectory)/.nuget'
 
 # ---------------------------------------------------------
-# Build project to reveal any compile errors
+# Build API project (debug errors)
 # ---------------------------------------------------------
 - script: |
     export NUGET_PACKAGES=$(Build.SourcesDirectory)/.nuget
@@ -66,7 +66,7 @@ steps:
   displayName: Install dotnet-ef
 
 # ---------------------------------------------------------
-# Build EF Core migration bundle using MoviesDbContext
+# Build EF Core migration bundle
 # ---------------------------------------------------------
 - script: |
     export NUGET_PACKAGES=$(Build.SourcesDirectory)/.nuget
@@ -92,7 +92,7 @@ steps:
         --connection "$(sampleapiDBConnectionstring)"
 
 # ---------------------------------------------------------
-# Test + Coverage
+# Run tests
 # ---------------------------------------------------------
 - task: DotNetCoreCLI@2
   displayName: Run tests with coverage
@@ -125,7 +125,7 @@ steps:
   displayName: Login to Docker Hub
 
 # ---------------------------------------------------------
-# Build Docker image (Linux)
+# Build Docker image
 # ---------------------------------------------------------
 - script: |
     docker build -t $(DOCKERHUB_USERNAME)/sampledataaccessapi:$(Build.BuildId) .
@@ -145,3 +145,35 @@ steps:
     docker tag $(DOCKERHUB_USERNAME)/sampledataaccessapi:$(Build.BuildId) $(DOCKERHUB_USERNAME)/sampledataaccessapi:latest
     docker push $(DOCKERHUB_USERNAME)/sampledataaccessapi:latest
   displayName: Push latest tag
+
+# ---------------------------------------------------------
+# Inject SQL connection string secret into Azure Container Apps
+# ---------------------------------------------------------
+- task: AzureCLI@2
+  displayName: "Set ACA secret: MoviesDb"
+  inputs:
+    azureSubscription: 'Azure subscription 1(c13b401c-dde4-4298-ad6c-3ef836f847d5)'
+    scriptType: bash
+    scriptLocation: inlineScript
+    inlineScript: |
+      echo "Setting ACA secret MoviesDb..."
+      az containerapp secret set \
+        --name sampledataaccessapi \
+        --resource-group sampleapi-rg \
+        --secrets MoviesDb=$(sampleapiDBConnectionstring)
+
+# ---------------------------------------------------------
+# Update Azure Container App to use new Docker Hub image
+# ---------------------------------------------------------
+- task: AzureCLI@2
+  displayName: "Update ACA image"
+  inputs:
+    azureSubscription: 'Azure subscription 1(c13b401c-dde4-4298-ad6c-3ef836f847d5)'
+    scriptType: bash
+    scriptLocation: inlineScript
+    inlineScript: |
+      echo "Updating Container App image..."
+      az containerapp update \
+        --name sampledataaccessapi \
+        --resource-group sampleapi-rg \
+        --image $(DOCKERHUB_USERNAME)/sampledataaccessapi:latest
