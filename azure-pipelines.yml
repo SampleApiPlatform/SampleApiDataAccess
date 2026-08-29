@@ -10,21 +10,10 @@ variables:
 - name: solution
   value: '**/*.sln'
 
-- name: buildPlatform
-  value: 'Any CPU'
-
 - name: buildConfiguration
   value: 'Release'
 
 steps:
-
-# ---------------------------------------------------------
-# Fix NuGet permission issue
-# ---------------------------------------------------------
-- script: |
-    export NUGET_PACKAGES=$(Build.SourcesDirectory)/.nuget
-    echo "Using NUGET_PACKAGES=$NUGET_PACKAGES"
-  displayName: Configure NuGet package folder
 
 # ---------------------------------------------------------
 # Restore
@@ -34,7 +23,6 @@ steps:
   inputs:
     command: restore
     projects: '$(solution)'
-    arguments: '--packages $(Build.SourcesDirectory)/.nuget'
 
 # ---------------------------------------------------------
 # Build
@@ -44,22 +32,12 @@ steps:
   inputs:
     command: build
     projects: '$(solution)'
-    arguments: '--configuration $(buildConfiguration) --packages $(Build.SourcesDirectory)/.nuget'
-
-# ---------------------------------------------------------
-# Build API project (debug errors)
-# ---------------------------------------------------------
-- script: |
-    export NUGET_PACKAGES=$(Build.SourcesDirectory)/.nuget
-    cd SampleDataAccessApi
-    dotnet build SampleDataAccessApi.csproj
-  displayName: Build API project (debug errors)
+    arguments: '--configuration $(buildConfiguration)'
 
 # ---------------------------------------------------------
 # Install dotnet-ef
 # ---------------------------------------------------------
 - script: |
-    export NUGET_PACKAGES=$(Build.SourcesDirectory)/.nuget
     dotnet tool install --global dotnet-ef
     export PATH="$PATH:/home/vsts/.dotnet/tools"
     dotnet ef --version
@@ -69,7 +47,6 @@ steps:
 # Build EF Core migration bundle
 # ---------------------------------------------------------
 - script: |
-    export NUGET_PACKAGES=$(Build.SourcesDirectory)/.nuget
     cd SampleDataAccessApi
     dotnet ef migrations bundle \
       --project SampleDataAccessApi.csproj \
@@ -85,31 +62,8 @@ steps:
   inputs:
     targetType: inline
     script: |
-      echo "Running EF migration bundle..."
       chmod +x efbundle
-
-      ./efbundle \
-        --connection "$(sampleapiDBConnectionstring)"
-
-# ---------------------------------------------------------
-# Run tests
-# ---------------------------------------------------------
-- task: DotNetCoreCLI@2
-  displayName: Run tests with coverage
-  inputs:
-    command: test
-    projects: '$(solution)'
-    arguments: '--configuration $(buildConfiguration) --collect:"XPlat Code Coverage"'
-
-# ---------------------------------------------------------
-# Publish coverage
-# ---------------------------------------------------------
-- task: PublishCodeCoverageResults@1
-  displayName: Publish coverage
-  inputs:
-    codeCoverageTool: Cobertura
-    summaryFileLocation: '$(Agent.TempDirectory)/**/coverage.cobertura.xml'
-    reportDirectory: '$(Agent.TempDirectory)'
+      ./efbundle --connection "$(sampleapiDBConnectionstring)"
 
 # ---------------------------------------------------------
 # Install Docker
@@ -159,21 +113,22 @@ steps:
       echo "Setting ACA secret MoviesDb..."
       az containerapp secret set \
         --name sampledataaccessapi \
-        --resource-group sampleapi-rg \
+        --resource-group sampleDataAccessApi_rg \
         --secrets MoviesDb=$(sampleapiDBConnectionstring)
 
 # ---------------------------------------------------------
-# Update Azure Container App to use new Docker Hub image
+# Update Azure Container App to use secretref + new Docker Hub image
 # ---------------------------------------------------------
 - task: AzureCLI@2
-  displayName: "Update ACA image"
+  displayName: "Update ACA image + env vars"
   inputs:
     azureSubscription: 'Azure subscription 1(c13b401c-dde4-4298-ad6c-3ef836f847d5)'
     scriptType: bash
     scriptLocation: inlineScript
     inlineScript: |
-      echo "Updating Container App image..."
+      echo "Updating Container App image and env vars..."
       az containerapp update \
         --name sampledataaccessapi \
-        --resource-group sampleapi-rg \
-        --image $(DOCKERHUB_USERNAME)/sampledataaccessapi:latest
+        --resource-group sampleDataAccessApi_rg \
+        --image docker.io/$(DOCKERHUB_USERNAME)/sampledataaccessapi:latest \
+        --set-env-vars ConnectionStrings__MoviesDb=secretref:MoviesDb

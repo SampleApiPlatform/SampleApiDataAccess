@@ -32,7 +32,7 @@ builder.Services.AddScoped<IMovieRepository, MovieRepository>();
 // EF Core SQL Azure with retry in case that there are transient connection issues
 builder.Services.AddDbContext<MoviesDbContext>(options =>
     options.UseSqlServer(
-        builder.Configuration.GetConnectionString("DefaultConnection"),
+        builder.Configuration.GetConnectionString("MoviesDb"),
         sqlOptions => sqlOptions.EnableRetryOnFailure(
             maxRetryCount: 5,
             maxRetryDelay: TimeSpan.FromSeconds(10),
