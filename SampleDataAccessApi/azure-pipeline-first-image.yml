@@ -1,0 +1,21 @@
+trigger:
+- main
+
+pool:
+  vmImage: 'ubuntu-latest'
+
+steps:
+- task: DockerInstaller@0
+  displayName: Install Docker
+
+- script: |
+    docker build -t popdemar/sampledataaccessapi:latest .
+  displayName: Build Docker Image
+
+- script: |
+    echo $(DOCKERHUB_TOKEN) | docker login -u popdemar --password-stdin
+  displayName: Docker Login
+
+- script: |
+    docker push popdemar/sampledataaccessapi:latest
+  displayName: Push Image to Docker Hub
