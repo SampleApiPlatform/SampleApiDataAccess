@@ -106,7 +106,8 @@ steps:
 - task: AzureCLI@2
   displayName: "Set ACA secret: MoviesDb"
   inputs:
-    azureSubscription: 'Azure subscription 1(c13b401c-dde4-4298-ad6c-3ef836f847d5)'
+    #azureSubscription: 'Azure subscription 1(c13b401c-dde4-4298-ad6c-3ef836f847d5)'
+    azureSubscription: 'Azure subscription 1'
     scriptType: bash
     scriptLocation: inlineScript
     inlineScript: |
@@ -122,7 +123,8 @@ steps:
 - task: AzureCLI@2
   displayName: "Update ACA image + env vars"
   inputs:
-    azureSubscription: 'Azure subscription 1(c13b401c-dde4-4298-ad6c-3ef836f847d5)'
+    #azureSubscription: 'Azure subscription 1(c13b401c-dde4-4298-ad6c-3ef836f847d5)'
+    azureSubscription: 'Azure subscription 1'
     scriptType: bash
     scriptLocation: inlineScript
     inlineScript: |
