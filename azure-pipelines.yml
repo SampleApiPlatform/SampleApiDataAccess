@@ -2,170 +2,26 @@ trigger:
 - main
 
 pool:
-  vmImage: ubuntu-latest
-
-variables:
-- group: New variable group 27-Jul
-
-- name: solution
-  value: '**/*.sln'
-
-- name: buildConfiguration
-  value: 'Release'
+  vmImage: 'ubuntu-latest'
 
 steps:
-# ---------------------------------------------------------
-# Restore
-# ---------------------------------------------------------
-- task: DotNetCoreCLI@2
-  displayName: Restore packages
-  inputs:
-    command: restore
-    projects: '$(solution)'
+- checkout: self
 
-# ---------------------------------------------------------
-# Build
-# ---------------------------------------------------------
-- task: DotNetCoreCLI@2
-  displayName: Build solution
-  inputs:
-    command: build
-    projects: '$(solution)'
-    arguments: '--configuration $(buildConfiguration)'
-  env:
-    HOME: /home/vsts
+- script: |
+    export DOCKER_BUILDKIT=1
+  displayName: Enable BuildKit
 
-# ---------------------------------------------------------
-# Install dotnet-ef
-# ---------------------------------------------------------
-- task: Bash@3
-  displayName: Install dotnet-ef
-  inputs:
-    targetType: inline
-    script: |
-      dotnet tool install dotnet-ef --tool-path ./.tools
-      export PATH="$PATH:$(pwd)/.tools"
-      dotnet ef --version
-
-
-# ---------------------------------------------------------
-# Build EF Core migration bundle
-# ---------------------------------------------------------
-- task: Bash@3
-  displayName: Build EF migration bundle
-  inputs:
-    targetType: inline
-    script: |
-      cd SampleDataAccessApi
-      dotnet ef migrations bundle \
-        --project SampleDataAccessApi.csproj \
-        --context MoviesDbContext \
-        --output ../efbundle
-
-# ---------------------------------------------------------
-# Run EF migration bundle against Azure SQL
-# ---------------------------------------------------------
-- task: Bash@3
-  displayName: Run EF migration bundle
-  inputs:
-    targetType: inline
-    script: |
-      chmod +x efbundle
-      ./efbundle --connection "$(sampleapiDBConnectionstring)"
-
-# ---------------------------------------------------------
-# Install Docker
-# ---------------------------------------------------------
 - task: DockerInstaller@0
   displayName: Install Docker
 
-# ---------------------------------------------------------
-# Login to Docker Hub
-# ---------------------------------------------------------
-- task: Bash@3
-  displayName: Login to Docker Hub
-  inputs:
-    targetType: inline
-    script: |
-      echo "$(DOCKERHUB_TOKEN)" | docker login -u "$(DOCKERHUB_USERNAME)" --password-stdin
+- script: |
+    docker build -t popdemar/sampledataaccessapi:latest .
+  displayName: Build Docker Image
 
-# ---------------------------------------------------------
-# Build Docker image
-# ---------------------------------------------------------
-- task: Bash@3
-  displayName: Build Docker image
-  inputs:
-    targetType: inline
-    script: |
-      docker build -t $(DOCKERHUB_USERNAME)/sampledataaccessapi:$(Build.BuildId) .
+- script: |
+    echo $(DOCKERHUB_TOKEN) | docker login -u popdemar --password-stdin
+  displayName: Docker Login
 
-# ---------------------------------------------------------
-# Push Docker image
-# ---------------------------------------------------------
-- task: Bash@3
-  displayName: Push Docker image
-  inputs:
-    targetType: inline
-    script: |
-      docker push $(DOCKERHUB_USERNAME)/sampledataaccessapi:$(Build.BuildId)
-
-# ---------------------------------------------------------
-# Tag & Push latest
-# ---------------------------------------------------------
-- task: Bash@3
-  displayName: Push latest tag
-  inputs:
-    targetType: inline
-    script: |
-      docker tag $(DOCKERHUB_USERNAME)/sampledataaccessapi:$(Build.BuildId) $(DOCKERHUB_USERNAME)/sampledataaccessapi:latest
-      docker push $(DOCKERHUB_USERNAME)/sampledataaccessapi:latest
-
-# ---------------------------------------------------------
-# Azure CLI login (Service Principal)
-# ---------------------------------------------------------
-# Erwartet diese Secrets im Variable Group:
-# AZURE_CLIENT_ID, AZURE_TENANT_ID, AZURE_CLIENT_SECRET, AZURE_SUBSCRIPTION_ID
-# ---------------------------------------------------------
-- task: Bash@3
-  displayName: Azure CLI login
-  inputs:
-    targetType: inline
-    script: |
-      az login --service-principal \
-        --username "$AZURE_CLIENT_ID" \
-        --password "$AZURE_CLIENT_SECRET" \
-        --tenant "$AZURE_TENANT_ID"
-
-      az account set --subscription "$AZURE_SUBSCRIPTION_ID"
-      az account show
-
-# ---------------------------------------------------------
-# Inject SQL connection string secret into Azure Container Apps
-# ---------------------------------------------------------
-- task: Bash@3
-  displayName: Set ACA secret MoviesDb
-  inputs:
-    targetType: inline
-    script: |
-      echo "Setting ACA secret MoviesDb..."
-      az containerapp secret set \
-        --name sampledataaccessapi \
-        --resource-group sampleDataAccessApi_rg \
-        --secrets MoviesDb="$(sampleapiDBConnectionstring)"
-
-# ---------------------------------------------------------
-# Update Azure Container App to use secretref + new Docker Hub image
-# ---------------------------------------------------------
-- task: Bash@3
-  displayName: Update ACA image + env vars
-  inputs:
-    targetType: inline
-    script: |
-      echo "Updating Container App image and env vars..."
-      az containerapp update \
-        --name sampledataaccessapi \
-        --resource-group sampleDataAccessApi_rg \
-        --image docker.io/$(DOCKERHUB_USERNAME)/sampledataaccessapi:latest \
-        --set-env-vars ConnectionStrings__MoviesDb=secretref:MoviesDb
-        
-
+- script: |
+    docker push popdemar/sampledataaccessapi:latest
+  displayName: Push Image to Docker Hub
