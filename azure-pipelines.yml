@@ -117,7 +117,7 @@ steps:
         --secrets MoviesDb=$(sampleapiDBConnectionstring)
 
 # ---------------------------------------------------------
-# Update Azure Container App to use secretref + new Docker Hub image
+# Update Azure Container App to use secretref + new Docker Hub image.
 # ---------------------------------------------------------
 - task: AzureCLI@2
   displayName: "Update ACA image + env vars"
