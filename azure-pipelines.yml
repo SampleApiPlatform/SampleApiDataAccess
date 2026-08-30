@@ -32,6 +32,8 @@ steps:
     command: build
     projects: '$(solution)'
     arguments: '--configuration $(buildConfiguration)'
+  env:
+    HOME: /home/vsts
 
 # ---------------------------------------------------------
 # Install dotnet-ef
