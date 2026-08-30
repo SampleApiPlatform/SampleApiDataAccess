@@ -7,6 +7,10 @@ pool:
 steps:
 - checkout: self
 
+- script: |
+    export DOCKER_BUILDKIT=1
+  displayName: Enable BuildKit
+
 - task: DockerInstaller@0
   displayName: Install Docker
 
