@@ -40,9 +40,9 @@ COPY SampleDataAccessApi/SampleDataAccessApi.csproj SampleApi/
 # this solution is only when running in public networks (hotspots)
 # also disable running jobs in parallel
 #COPY nuget.config .
-#RUN dotnet restore "SampleDataAccessApi/SampleDataAccessApi.csproj" --disable-parallel
-RUN --mount=type=cache,target=/root/.nuget/packages \
-    dotnet restore "SampleDataAccessApi/SampleDataAccessApi.csproj" --disable-parallel
+RUN dotnet restore "SampleDataAccessApi/SampleDataAccessApi.csproj" 
+#RUN --mount=type=cache,target=/root/.nuget/packages \
+#    dotnet restore "SampleDataAccessApi/SampleDataAccessApi.csproj" --disable-parallel
 
 
 
