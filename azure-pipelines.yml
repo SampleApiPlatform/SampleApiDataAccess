@@ -14,7 +14,6 @@ variables:
   value: 'Release'
 
 steps:
-
 # ---------------------------------------------------------
 # Restore
 # ---------------------------------------------------------
@@ -37,22 +36,28 @@ steps:
 # ---------------------------------------------------------
 # Install dotnet-ef
 # ---------------------------------------------------------
-- script: |
-    dotnet tool install --global dotnet-ef
-    export PATH="$PATH:/home/vsts/.dotnet/tools"
-    dotnet ef --version
+- task: Bash@3
   displayName: Install dotnet-ef
+  inputs:
+    targetType: inline
+    script: |
+      dotnet tool install --global dotnet-ef
+      export PATH="$PATH:/home/vsts/.dotnet/tools"
+      dotnet ef --version
 
 # ---------------------------------------------------------
 # Build EF Core migration bundle
 # ---------------------------------------------------------
-- script: |
-    cd SampleDataAccessApi
-    dotnet ef migrations bundle \
-      --project SampleDataAccessApi.csproj \
-      --context MoviesDbContext \
-      --output ../efbundle
+- task: Bash@3
   displayName: Build EF migration bundle
+  inputs:
+    targetType: inline
+    script: |
+      cd SampleDataAccessApi
+      dotnet ef migrations bundle \
+        --project SampleDataAccessApi.csproj \
+        --context MoviesDbContext \
+        --output ../efbundle
 
 # ---------------------------------------------------------
 # Run EF migration bundle against Azure SQL
@@ -74,60 +79,85 @@ steps:
 # ---------------------------------------------------------
 # Login to Docker Hub
 # ---------------------------------------------------------
-- script: |
-    echo "$(DOCKERHUB_TOKEN)" | docker login -u "$(DOCKERHUB_USERNAME)" --password-stdin
+- task: Bash@3
   displayName: Login to Docker Hub
+  inputs:
+    targetType: inline
+    script: |
+      echo "$(DOCKERHUB_TOKEN)" | docker login -u "$(DOCKERHUB_USERNAME)" --password-stdin
 
 # ---------------------------------------------------------
 # Build Docker image
 # ---------------------------------------------------------
-- script: |
-    docker build -t $(DOCKERHUB_USERNAME)/sampledataaccessapi:$(Build.BuildId) .
+- task: Bash@3
   displayName: Build Docker image
+  inputs:
+    targetType: inline
+    script: |
+      docker build -t $(DOCKERHUB_USERNAME)/sampledataaccessapi:$(Build.BuildId) .
 
 # ---------------------------------------------------------
 # Push Docker image
 # ---------------------------------------------------------
-- script: |
-    docker push $(DOCKERHUB_USERNAME)/sampledataaccessapi:$(Build.BuildId)
+- task: Bash@3
   displayName: Push Docker image
+  inputs:
+    targetType: inline
+    script: |
+      docker push $(DOCKERHUB_USERNAME)/sampledataaccessapi:$(Build.BuildId)
 
 # ---------------------------------------------------------
 # Tag & Push latest
 # ---------------------------------------------------------
-- script: |
-    docker tag $(DOCKERHUB_USERNAME)/sampledataaccessapi:$(Build.BuildId) $(DOCKERHUB_USERNAME)/sampledataaccessapi:latest
-    docker push $(DOCKERHUB_USERNAME)/sampledataaccessapi:latest
+- task: Bash@3
   displayName: Push latest tag
+  inputs:
+    targetType: inline
+    script: |
+      docker tag $(DOCKERHUB_USERNAME)/sampledataaccessapi:$(Build.BuildId) $(DOCKERHUB_USERNAME)/sampledataaccessapi:latest
+      docker push $(DOCKERHUB_USERNAME)/sampledataaccessapi:latest
+
+# ---------------------------------------------------------
+# Azure CLI login (Service Principal)
+# ---------------------------------------------------------
+# Erwartet diese Secrets im Variable Group:
+# AZURE_CLIENT_ID, AZURE_TENANT_ID, AZURE_CLIENT_SECRET, AZURE_SUBSCRIPTION_ID
+# ---------------------------------------------------------
+- task: Bash@3
+  displayName: Azure CLI login
+  inputs:
+    targetType: inline
+    script: |
+      az login --service-principal \
+        --username "$AZURE_CLIENT_ID" \
+        --password "$AZURE_CLIENT_SECRET" \
+        --tenant "$AZURE_TENANT_ID"
+
+      az account set --subscription "$AZURE_SUBSCRIPTION_ID"
+      az account show
 
 # ---------------------------------------------------------
 # Inject SQL connection string secret into Azure Container Apps
 # ---------------------------------------------------------
-- task: AzureCLI@2
-  displayName: "Set ACA secret: MoviesDb"
+- task: Bash@3
+  displayName: Set ACA secret: MoviesDb
   inputs:
-    #azureSubscription: 'Azure subscription 1(c13b401c-dde4-4298-ad6c-3ef836f847d5)'
-    azureSubscription: 'Azure subscription 1'
-    scriptType: bash
-    scriptLocation: inlineScript
-    inlineScript: |
+    targetType: inline
+    script: |
       echo "Setting ACA secret MoviesDb..."
       az containerapp secret set \
         --name sampledataaccessapi \
         --resource-group sampleDataAccessApi_rg \
-        --secrets MoviesDb=$(sampleapiDBConnectionstring)
+        --secrets MoviesDb="$(sampleapiDBConnectionstring)"
 
 # ---------------------------------------------------------
-# Update Azure Container App to use secretref + new Docker Hub image.
+# Update Azure Container App to use secretref + new Docker Hub image
 # ---------------------------------------------------------
-- task: AzureCLI@2
-  displayName: "Update ACA image + env vars"
+- task: Bash@3
+  displayName: Update ACA image + env vars
   inputs:
-    #azureSubscription: 'Azure subscription 1(c13b401c-dde4-4298-ad6c-3ef836f847d5)'
-    azureSubscription: 'Azure subscription 1'
-    scriptType: bash
-    scriptLocation: inlineScript
-    inlineScript: |
+    targetType: inline
+    script: |
       echo "Updating Container App image and env vars..."
       az containerapp update \
         --name sampledataaccessapi \
