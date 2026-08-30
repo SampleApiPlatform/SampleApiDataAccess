@@ -164,3 +164,4 @@ steps:
         --resource-group sampleDataAccessApi_rg \
         --image docker.io/$(DOCKERHUB_USERNAME)/sampledataaccessapi:latest \
         --set-env-vars ConnectionStrings__MoviesDb=secretref:MoviesDb
+        
