@@ -148,7 +148,8 @@ steps:
       az containerapp secret set \
         --name sampledataaccessapi \
         --resource-group sampleDataAccessApi_rg \
-        --secrets MoviesDb="$(sampleapiDBConnectionstring)"
+        --secrets "MoviesDb=$sampleapiDBConnectionstring"
+
 
 # ---------------------------------------------------------
 # Update Azure Container App to use secretref + new Docker Hub image
@@ -164,4 +165,5 @@ steps:
         --resource-group sampleDataAccessApi_rg \
         --image docker.io/$(DOCKERHUB_USERNAME)/sampledataaccessapi:latest \
         --set-env-vars ConnectionStrings__MoviesDb=secretref:MoviesDb
-        
+
+
