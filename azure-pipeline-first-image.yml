@@ -5,6 +5,8 @@ pool:
   vmImage: 'ubuntu-latest'
 
 steps:
+- checkout: self
+
 - task: DockerInstaller@0
   displayName: Install Docker
 
