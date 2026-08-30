@@ -41,9 +41,10 @@ steps:
   inputs:
     targetType: inline
     script: |
-      dotnet tool install --global dotnet-ef
-      export PATH="$PATH:/home/vsts/.dotnet/tools"
+      dotnet tool install dotnet-ef --tool-path ./.tools
+      export PATH="$PATH:$(pwd)/.tools"
       dotnet ef --version
+
 
 # ---------------------------------------------------------
 # Build EF Core migration bundle
