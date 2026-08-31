@@ -18,13 +18,13 @@ var builder = WebApplication.CreateBuilder(args);
 //var audience = jwtSettings.GetValue<string>("Audience")
 //    ?? throw new Exception("JWT Audience is missing in configuration");
 
-// Register services
-var sharedServicesUrl = builder.Configuration["ServiceUrls:SharedServices"];
-ArgumentException.ThrowIfNullOrWhiteSpace(sharedServicesUrl);
-builder.Services.AddHttpClient<ISharedServicesClient, SharedServicesClient>(client =>
-{
-    client.BaseAddress = new Uri(sharedServicesUrl);
-});
+// Register services: DONT THEY COME FROM NUGET NOW??
+//var sharedServicesUrl = builder.Configuration["ServiceUrls:SharedServices"];
+//ArgumentException.ThrowIfNullOrWhiteSpace(sharedServicesUrl);
+//builder.Services.AddHttpClient<ISharedServicesClient, SharedServicesClient>(client =>
+//{
+//    client.BaseAddress = new Uri(sharedServicesUrl);
+//});
 
 // Register services
 builder.Services.AddScoped<IMovieRepository, MovieRepository>();
