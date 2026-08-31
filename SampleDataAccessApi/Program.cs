@@ -8,15 +8,15 @@ using SampleDataAccessApi.Extensions;
 var builder = WebApplication.CreateBuilder(args);
 
 // Load JWT settings
-var jwtSettings = builder.Configuration.GetSection("Jwt");
-var key = jwtSettings.GetValue<string>("Key")
-    ?? throw new Exception("JWT Key is missing in configuration");
-
-var issuer = jwtSettings.GetValue<string>("Issuer")
-    ?? throw new Exception("JWT Issuer is missing in configuration");
-
-var audience = jwtSettings.GetValue<string>("Audience")
-    ?? throw new Exception("JWT Audience is missing in configuration");
+//var jwtSettings = builder.Configuration.GetSection("Jwt");
+//var key = jwtSettings.GetValue<string>("Key")
+//    ?? throw new Exception("JWT Key is missing in configuration");
+//
+//var issuer = jwtSettings.GetValue<string>("Issuer")
+//    ?? throw new Exception("JWT Issuer is missing in configuration");
+//
+//var audience = jwtSettings.GetValue<string>("Audience")
+//    ?? throw new Exception("JWT Audience is missing in configuration");
 
 // Register services
 var sharedServicesUrl = builder.Configuration["ServiceUrls:SharedServices"];
