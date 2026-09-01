@@ -16,6 +16,16 @@ variables:
 steps:
 
 # ---------------------------------------------------------
+# Install .NET 8 SDK (Fix für Root/NuGet Permission Fehler)
+# ---------------------------------------------------------
+- task: UseDotNet@2
+  displayName: Install .NET SDK 8
+  inputs:
+    packageType: sdk
+    version: 8.0.x
+
+
+# ---------------------------------------------------------
 # Restore
 # ---------------------------------------------------------
 - task: DotNetCoreCLI@2
