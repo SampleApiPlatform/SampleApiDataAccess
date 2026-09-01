@@ -42,7 +42,6 @@ steps:
     command: restore
     projects: '$(solution)'
 
-
 # ---------------------------------------------------------
 # Build (direkt, NICHT DotNetCoreCLI)
 # ---------------------------------------------------------
@@ -58,7 +57,6 @@ steps:
     command: build
     projects: '$(solution)'
     arguments: '--configuration $(buildConfiguration)'
-
 
 # ---------------------------------------------------------
 # Build EF Core migration bundle
