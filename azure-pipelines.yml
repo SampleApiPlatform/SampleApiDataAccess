@@ -29,16 +29,36 @@ steps:
 # ---------------------------------------------------------
 # Restore (direkt, NICHT DotNetCoreCLI)
 # ---------------------------------------------------------
-- script: |
-    dotnet restore SampleDataAccessApi.sln
+#- script: |
+#    dotnet restore SampleDataAccessApi.sln
+#  displayName: Restore packages
+
+# ---------------------------------------------------------
+# Restore
+# ---------------------------------------------------------
+- task: DotNetCoreCLI@2
   displayName: Restore packages
+  inputs:
+    command: restore
+    projects: '$(solution)'
+
 
 # ---------------------------------------------------------
 # Build (direkt, NICHT DotNetCoreCLI)
 # ---------------------------------------------------------
-- script: |
-    dotnet build SampleDataAccessApi.sln --configuration Release
+#- script: |
+#    dotnet build SampleDataAccessApi.sln --configuration Release
+#  displayName: Build solution
+# ---------------------------------------------------------
+# Build
+# ---------------------------------------------------------
+- task: DotNetCoreCLI@2
   displayName: Build solution
+  inputs:
+    command: build
+    projects: '$(solution)'
+    arguments: '--configuration $(buildConfiguration)'
+
 
 # ---------------------------------------------------------
 # Build EF Core migration bundle
