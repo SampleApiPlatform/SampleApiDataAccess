@@ -7,16 +7,10 @@ pool:
 variables:
 - group: New variable group 27-Jul
 
-- name: solution
-  value: '**/*.sln'
-
-- name: buildConfiguration
-  value: 'Release'
-
 steps:
 
 # ---------------------------------------------------------
-# Install .NET 8 SDK (Fix für Root/NuGet Permission Fehler)
+# Install .NET 8 SDK (UseDotNet wirkt nur für direkte dotnet-Befehle)
 # ---------------------------------------------------------
 - task: UseDotNet@2
   displayName: Install .NET SDK 8
@@ -24,57 +18,41 @@ steps:
     packageType: sdk
     version: 8.0.x
 
-
 # ---------------------------------------------------------
-# Restore
+# Restore (direkt, NICHT DotNetCoreCLI)
 # ---------------------------------------------------------
-- task: DotNetCoreCLI@2
+- script: |
+    dotnet restore SampleDataAccessApi.sln
   displayName: Restore packages
-  inputs:
-    command: restore
-    projects: '$(solution)'
 
 # ---------------------------------------------------------
-# Build
+# Build (direkt, NICHT DotNetCoreCLI)
 # ---------------------------------------------------------
-- task: DotNetCoreCLI@2
+- script: |
+    dotnet build SampleDataAccessApi.sln --configuration Release
   displayName: Build solution
-  inputs:
-    command: build
-    projects: '$(solution)'
-    arguments: '--configuration $(buildConfiguration)'
 
 # ---------------------------------------------------------
 # Build EF Core migration bundle
 # ---------------------------------------------------------
-- task: DotNetCoreCLI@2
+- script: |
+    dotnet ef migrations bundle --project SampleDataAccessApi --output efbundle
   displayName: Build EF migration bundle
-  inputs:
-    command: custom
-    custom: ef
-    arguments: "migrations bundle --project SampleDataAccessApi --output efbundle"
 
 # ---------------------------------------------------------
 # Run EF migration bundle
 # ---------------------------------------------------------
-- task: Bash@3
+- script: |
+    chmod +x efbundle
+    ./efbundle --connection "$sampleapiDBConnectionstring"
   displayName: Run EF migration bundle
-  inputs:
-    targetType: inline
-    script: |
-      echo "Running EF migration bundle..."
-      chmod +x efbundle
-      ./efbundle --connection "$(sampleapiDBConnectionstring)"
 
 # ---------------------------------------------------------
 # Test + Coverage
 # ---------------------------------------------------------
-- task: DotNetCoreCLI@2
+- script: |
+    dotnet test SampleDataAccessApi.sln --configuration Release --collect:"XPlat Code Coverage"
   displayName: Run tests with coverage
-  inputs:
-    command: test
-    projects: '$(solution)'
-    arguments: '--configuration $(buildConfiguration) --collect:"XPlat Code Coverage"'
 
 # ---------------------------------------------------------
 # Publish coverage
@@ -87,7 +65,7 @@ steps:
     reportDirectory: '$(Agent.TempDirectory)'
 
 # ---------------------------------------------------------
-# Build Docker image (Linux)
+# Build Docker image
 # ---------------------------------------------------------
 - task: Docker@2
   displayName: Build Docker image
@@ -101,22 +79,16 @@ steps:
 # ---------------------------------------------------------
 # Login to Docker Hub
 # ---------------------------------------------------------
-- task: Docker@2
-  displayName: Login to Docker Hub
-  inputs:
-    command: login
-    containerRegistry: $(DOCKERHUB_SERVICE_CONNECTION)
+- script: |
+    echo "$DOCKERHUB_TOKEN" | docker login -u "$DOCKERHUB_USERNAME" --password-stdin
+  displayName: Docker Hub Login
 
 # ---------------------------------------------------------
 # Push Docker image
 # ---------------------------------------------------------
-- task: Docker@2
+- script: |
+    docker push $(DOCKERHUB_USERNAME)/sampledataaccessapi:latest
   displayName: Push Docker image
-  inputs:
-    command: push
-    repository: $(DOCKERHUB_USERNAME)/sampledataaccessapi
-    tags: |
-      latest
 
 # ---------------------------------------------------------
 # Update ACA image
@@ -128,7 +100,6 @@ steps:
     scriptType: bash
     scriptLocation: inlineScript
     inlineScript: |
-      echo "Updating ACA image..."
       az containerapp update \
         --name sampledataaccessapi \
         --resource-group SampleAccessDataApi_rg \
