@@ -12,18 +12,18 @@ steps:
 # ---------------------------------------------------------
 # Install .NET 8 SDK (UseDotNet wirkt nur für direkte dotnet-Befehle)
 # ---------------------------------------------------------
-- task: UseDotNet@2
-  displayName: Install .NET SDK 8
-  inputs:
-    packageType: sdk
-    version: 8.0.x
+#- task: UseDotNet@2
+#  displayName: Install .NET SDK 8
+#  inputs:
+#    packageType: sdk
+#    version: 8.0.x
 
 # ---------------------------------------------------------
 # Path overwrite
 # ---------------------------------------------------------
-- script: |
-    echo "##vso[task.prependpath]/home/vsts/.dotnet"
-  displayName: Override PATH for dotnet
+#- script: |
+#    echo "##vso[task.prependpath]/home/vsts/.dotnet"
+#  displayName: Override PATH for dotnet
 
 
 # ---------------------------------------------------------
