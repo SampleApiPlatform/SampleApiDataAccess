@@ -114,7 +114,9 @@ steps:
   displayName: "Set ACA secret: DefaultConnectionString"
   inputs:
     #azureSubscription: 'Azure subscription 1(c13b401c-dde4-4298-ad6c-3ef836f847d5)'
-    azureSubscription: 'Azure subscription 1'
+    #azureSubscription: 'Azure subscription 1'
+    azureSubscription: 'SampleDataAccessApi_ServiceConnection'
+
     scriptType: bash
     scriptLocation: inlineScript
     inlineScript: |
@@ -131,7 +133,9 @@ steps:
   displayName: "Update ACA revision"
   inputs:
     #azureSubscription: 'Azure subscription 1(c13b401c-dde4-4298-ad6c-3ef836f847d5)'
-    azureSubscription: 'Azure subscription 1'
+    #azureSubscription: 'Azure subscription 1'
+    azureSubscription: 'SampleDataAccessApi_ServiceConnection'
+
     scriptType: bash
     scriptLocation: inlineScript
     inlineScript: |
