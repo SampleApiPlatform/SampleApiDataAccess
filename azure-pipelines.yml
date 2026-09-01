@@ -19,6 +19,14 @@ steps:
     version: 8.0.x
 
 # ---------------------------------------------------------
+# Path overwrite
+# ---------------------------------------------------------
+- script: |
+    echo "##vso[task.prependpath]/home/vsts/.dotnet"
+  displayName: Override PATH for dotnet
+
+
+# ---------------------------------------------------------
 # Restore (direkt, NICHT DotNetCoreCLI)
 # ---------------------------------------------------------
 - script: |
