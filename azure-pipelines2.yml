@@ -45,7 +45,7 @@ steps:
     arguments: "migrations bundle --project SampleDataAccessApi --output efbundle"
 
 # ---------------------------------------------------------
-# Run EF migration bundle
+# Run EF migration bundle against Azure SQL
 # ---------------------------------------------------------
 - task: Bash@3
   displayName: Run EF migration bundle
@@ -54,7 +54,9 @@ steps:
     script: |
       echo "Running EF migration bundle..."
       chmod +x efbundle
-      ./efbundle --connection "$(sampleapiDBConnectionstring)"
+
+      ./efbundle \
+        --connection "$(sampleapiDBConnectionstring)"
 
 # ---------------------------------------------------------
 # Test + Coverage
@@ -77,49 +79,68 @@ steps:
     reportDirectory: '$(Agent.TempDirectory)'
 
 # ---------------------------------------------------------
-# Build Docker image (Linux)
+# Install Docker
 # ---------------------------------------------------------
-- task: Docker@2
-  displayName: Build Docker image
-  inputs:
-    command: build
-    Dockerfile: SampleDataAccessApi/Dockerfile
-    repository: $(DOCKERHUB_USERNAME)/sampledataaccessapi
-    tags: |
-      latest
+- task: DockerInstaller@0
+  displayName: Install Docker
+
+# ---------------------------------------------------------
+# Build Docker image (Docker Hub)
+# ---------------------------------------------------------
+- script: |
+    docker build -t popdemar/sampledataaccessapi:$(Build.BuildId) .
+  displayName: Build Docker Image
 
 # ---------------------------------------------------------
 # Login to Docker Hub
 # ---------------------------------------------------------
-- task: Docker@2
-  displayName: Login to Docker Hub
-  inputs:
-    command: login
-    containerRegistry: $(DOCKERHUB_SERVICE_CONNECTION)
+- script: |
+    echo $(DOCKERHUB_TOKEN) | docker login -u popdemar --password-stdin
+  displayName: Docker Login
 
 # ---------------------------------------------------------
 # Push Docker image
 # ---------------------------------------------------------
-- task: Docker@2
-  displayName: Push Docker image
-  inputs:
-    command: push
-    repository: $(DOCKERHUB_USERNAME)/sampledataaccessapi
-    tags: |
-      latest
+- script: |
+    docker push popdemar/sampledataaccessapi:$(Build.BuildId)
+    docker tag popdemar/sampledataaccessapi:$(Build.BuildId) popdemar/sampledataaccessapi:latest
+    docker push popdemar/sampledataaccessapi:latest
+  displayName: Push Docker Image
 
 # ---------------------------------------------------------
-# Update ACA image
+# Inject SQL connection string secret into ACA
 # ---------------------------------------------------------
 - task: AzureCLI@2
-  displayName: Update ACA image
+  displayName: "Set ACA secret: DefaultConnectionString"
   inputs:
+    #azureSubscription: 'Azure subscription 1(c13b401c-dde4-4298-ad6c-3ef836f847d5)'
+    #azureSubscription: 'Azure subscription 1'
     azureSubscription: 'SampleDataAccessApi_ServiceConnection'
+
     scriptType: bash
     scriptLocation: inlineScript
     inlineScript: |
-      echo "Updating ACA image..."
+      echo "Setting ACA secret DefaultConnectionString..."
+      az containerapp secret set \
+        --name sampledataaccessapi \
+        --resource-group SampleDataAccessApi_rg \
+        --secrets DefaultConnectionString=$(sampleapiDBConnectionstring)
+
+# ---------------------------------------------------------
+# Update ACA to use new Docker Hub image
+# ---------------------------------------------------------
+- task: AzureCLI@2
+  displayName: "Update ACA revision"
+  inputs:
+    #azureSubscription: 'Azure subscription 1(c13b401c-dde4-4298-ad6c-3ef836f847d5)'
+    #azureSubscription: 'Azure subscription 1'
+    azureSubscription: 'SampleDataAccessApi_ServiceConnection'
+
+    scriptType: bash
+    scriptLocation: inlineScript
+    inlineScript: |
+      echo "Updating ACA to new image..."
       az containerapp update \
         --name sampledataaccessapi \
-        --resource-group SampleAccessDataApi_rg \
-        --image docker.io/$(DOCKERHUB_USERNAME)/sampledataaccessapi:latest
+        --resource-group SampleDataAccessApi_rg \
+        --image popdemar/sampledataaccessapi:latest
