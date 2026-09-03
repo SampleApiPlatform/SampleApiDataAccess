@@ -91,6 +91,10 @@ steps:
 # if missing it will sacnn all projects in the working directory and can be confused with some files that look like projects but they are not (ex: dcproj files)
 # ---------------------------------------------------------
 - script: |
+    echo "Listing repo structure..."
+    ls -R .
+  displayName: Debug List repo structure
+- script: |
     dotnet ef migrations bundle \
       --project SampleDataAccessApi/SampleDataAccessApi.csproj \
       --output efbundle
