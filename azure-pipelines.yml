@@ -101,7 +101,6 @@ steps:
 - script: |
     cd SampleDataAccessApi
     dotnet ef migrations bundle \
-      --connection "$(SqlConnectionString)" \
       --output ../efbundle
   displayName: Build EF migration bundle
 
