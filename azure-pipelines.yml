@@ -80,6 +80,11 @@ steps:
 #  displayName: Restore + Build (direct)
 
 
+# Install EF Toolsgit add
+- script: |
+    dotnet tool install --global dotnet-ef
+  displayName: Install EF Tools
+
 # ---------------------------------------------------------
 # Build EF Core migration bundle
 # ---------------------------------------------------------
