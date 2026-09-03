@@ -141,7 +141,7 @@ steps:
   displayName: Build Docker image
   inputs:
     command: build
-    Dockerfile: SampleDataAccessApi/Dockerfile
+    Dockerfile: Dockerfile
     repository: $(DOCKERHUB_USERNAME)/sampledataaccessapi
     tags: |
       latest
