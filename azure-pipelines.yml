@@ -98,13 +98,19 @@ steps:
     cd SampleDataAccessApi
     dotnet ef migrations bundle --output ../efbundle
   displayName: Build EF migration bundle
+- script: |
+    cd SampleDataAccessApi
+    dotnet ef migrations bundle \
+      --connection "$(SqlConnectionString)" \
+      --output ../efbundle
+  displayName: Build EF migration bundle
 
 # ---------------------------------------------------------
 # Run EF migration bundle
 # ---------------------------------------------------------
 - script: |
     chmod +x efbundle
-    ./efbundle --connection "$sampleapiDBConnectionstring"
+    ./efbundle --connection "$(sampleDataAccessApiDBConnectionstring)"
   displayName: Run EF migration bundle
 
 # ---------------------------------------------------------
