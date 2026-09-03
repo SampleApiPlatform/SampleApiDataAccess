@@ -87,10 +87,15 @@ steps:
 
 # ---------------------------------------------------------
 # Build EF Core migration bundle
+# we provide the path SampleDataAccessApi/SampleDataAccessApi.csproj.
+# if missing it will sacnn all projects in the working directory and can be confused with some files that look like projects but they are not (ex: dcproj files)
 # ---------------------------------------------------------
 - script: |
-    dotnet ef migrations bundle --project SampleDataAccessApi --output efbundle
+    dotnet ef migrations bundle \
+      --project SampleDataAccessApi/SampleDataAccessApi.csproj \
+      --output efbundle
   displayName: Build EF migration bundle
+
 
 # ---------------------------------------------------------
 # Run EF migration bundle
