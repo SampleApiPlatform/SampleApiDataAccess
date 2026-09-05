@@ -5,7 +5,6 @@ pool:
   vmImage: ubuntu-latest
 
 variables:
-#- group: SampleDataAccessApiVariableGroup
 
 - name: solution
   value: '**/*.sln'
@@ -16,8 +15,8 @@ variables:
 - name: buildConfiguration
   value: 'Release'
 
-- name: NUGET_PACKAGES
-  value: $(Agent.TempDirectory)/.nuget/packages
+#- name: NUGET_PACKAGES
+#  value: $(Agent.TempDirectory)/.nuget/packages
 
 
 steps:
@@ -70,13 +69,6 @@ steps:
 - script: |
     ./efbundle --connection "$(sampleapiDBConnectionstring)"
   displayName: Run EF migration bundle
-
-#- script: |
-#    ./efbundle --connection "$sampleapiDBConnectionstring"
-#  displayName: Run EF migration bundle
-#  env:
-#    sampleapiDBConnectionstring: $(sampleapiDBConnectionstring)
-
 
 # ---------------------------------------------------------
 # Test + Coverage
