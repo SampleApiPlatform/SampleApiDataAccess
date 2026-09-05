@@ -5,7 +5,7 @@ pool:
   vmImage: ubuntu-latest
 
 variables:
-- group: SampleDataAccessApiVariableGroup
+#- group: SampleDataAccessApiVariableGroup
 
 - name: solution
   value: '**/*.sln'
@@ -68,10 +68,15 @@ steps:
 # Run EF migration bundle
 # ---------------------------------------------------------
 - script: |
-    ./efbundle --connection "$sampleapiDBConnectionstring"
+    ./efbundle --connection "$(sampleapiDBConnectionstring)"
   displayName: Run EF migration bundle
-  env:
-    sampleapiDBConnectionstring: $(sampleapiDBConnectionstring)
+
+#- script: |
+#    ./efbundle --connection "$sampleapiDBConnectionstring"
+#  displayName: Run EF migration bundle
+#  env:
+#    sampleapiDBConnectionstring: $(sampleapiDBConnectionstring)
+
 
 # ---------------------------------------------------------
 # Test + Coverage
