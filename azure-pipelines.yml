@@ -15,8 +15,8 @@ variables:
 - name: buildConfiguration
   value: 'Release'
 
-#- name: NUGET_PACKAGES
-#  value: $(Agent.TempDirectory)/.nuget/packages
+- name: NUGET_PACKAGES
+  value: $(Agent.TempDirectory)/.nuget/packages
 
 
 steps:
