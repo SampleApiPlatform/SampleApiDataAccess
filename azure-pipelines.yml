@@ -149,10 +149,10 @@ steps:
 # ---------------------------------------------------------
 # Login to Docker Hub
 # ---------------------------------------------------------
-- script: |
-    echo "TOKEN: $(DOCKERHUB_TOKEN)"
-    echo "USERNAME: $(DOCKERHUB_USERNAME)"
-  displayName: Debug DockerHub variables
+#- script: |
+#    echo "TOKEN: $(DOCKERHUB_TOKEN)"
+#    echo "USERNAME: $(DOCKERHUB_USERNAME)"
+#  displayName: Debug DockerHub variables
 
 - script: |
     echo "$(DOCKERHUB_TOKEN)" | docker login -u "$(DOCKERHUB_USERNAME)" --password-stdin
@@ -177,5 +177,5 @@ steps:
     inlineScript: |
       az containerapp update \
         --name sampledataaccessapi \
-        --resource-group SampleAccessDataApi_rg \
+        --resource-group SampleDataAccessApi_rg \
         --image docker.io/$(DOCKERHUB_USERNAME)/sampledataaccessapi:latest
