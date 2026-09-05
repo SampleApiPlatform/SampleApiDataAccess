@@ -3,10 +3,9 @@ trigger:
 
 pool:
   vmImage: ubuntu-latest
-  #vmImage: ubuntu-22.04
 
 variables:
-- group: New variable group 27-Jul
+- group: SampleDataAccessApiVariableGroup
 
 - name: solution
   value: '**/*.sln'
@@ -24,30 +23,6 @@ variables:
 steps:
 
 # ---------------------------------------------------------
-# Install .NET 8 SDK (UseDotNet wirkt nur für direkte dotnet-Befehle)
-# ---------------------------------------------------------
-#- task: UseDotNet@2
-#  displayName: Install .NET SDK 8
-#  inputs:
-#    packageType: sdk
-#    version: 8.0.x
-
-# ---------------------------------------------------------
-# Path overwrite
-# ---------------------------------------------------------
-#- script: |
-#    echo "##vso[task.prependpath]/home/vsts/.dotnet"
-#  displayName: Override PATH for dotnet
-
-
-# ---------------------------------------------------------
-# Restore (direkt, NICHT DotNetCoreCLI)
-# ---------------------------------------------------------
-#- script: |
-#    dotnet restore SampleDataAccessApi.sln
-#  displayName: Restore packages
-
-# ---------------------------------------------------------
 # Restore
 # ---------------------------------------------------------
 - task: DotNetCoreCLI@2
@@ -56,12 +31,6 @@ steps:
     command: restore
     projects: '$(solution)'
 
-# ---------------------------------------------------------
-# Build (direkt, NICHT DotNetCoreCLI)
-# ---------------------------------------------------------
-#- script: |
-#    dotnet build SampleDataAccessApi.sln --configuration Release
-#  displayName: Build solution
 # ---------------------------------------------------------
 # Build
 # ---------------------------------------------------------
@@ -73,29 +42,15 @@ steps:
     arguments: '--configuration $(buildConfiguration)'
 
 
-#- script: |
-#    dotnet --version
-#    dotnet restore SampleDataAccessApi.sln
-#    dotnet build SampleDataAccessApi.sln --configuration Release
-#  displayName: Restore + Build (direct)
-
-
+# ---------------------------------------------------------
 # Install EF Toolsgit add
+# ---------------------------------------------------------
 - script: |
     dotnet tool install --global dotnet-ef
   displayName: Install EF Tools
 
 # ---------------------------------------------------------
-# Build EF Core migration bundle
-# we provide the path SampleDataAccessApi/SampleDataAccessApi.csproj.
-# if missing it will sacnn all projects in the working directory and can be confused with some files that look like projects but they are not (ex: dcproj files)
-# ---------------------------------------------------------
-#- script: |
-#    echo "Listing repo structure..."
-#    ls -R .
-#  displayName: Debug List repo structure
-# ---------------------------------------------------------
-# 1. Build EF migration bundle
+# Build EF migration bundle
 # ---------------------------------------------------------
 - script: |
     cd SampleDataAccessApi
@@ -103,17 +58,17 @@ steps:
   displayName: Build EF migration bundle
 
 # ---------------------------------------------------------
-# 2. Make bundle executable
+# Make bundle executable
 # ---------------------------------------------------------
 - script: |
     chmod +x efbundle
   displayName: Make EF bundle executable
 
 # ---------------------------------------------------------
-# 3. Run EF migration bundle
+# Run EF migration bundle
 # ---------------------------------------------------------
 - script: |
-    ./efbundle --connection "$(sampleDataAccessApiDBConnectionstring)"
+    ./efbundle --connection "$sampleapiDBConnectionstring"
   displayName: Run EF migration bundle
 
 
@@ -145,14 +100,6 @@ steps:
     repository: $(DOCKERHUB_USERNAME)/sampledataaccessapi
     tags: |
       latest
-
-# ---------------------------------------------------------
-# Login to Docker Hub
-# ---------------------------------------------------------
-#- script: |
-#    echo "TOKEN: $(DOCKERHUB_TOKEN)"
-#    echo "USERNAME: $(DOCKERHUB_USERNAME)"
-#  displayName: Debug DockerHub variables
 
 - script: |
     echo "$(DOCKERHUB_TOKEN)" | docker login -u "$(DOCKERHUB_USERNAME)" --password-stdin
