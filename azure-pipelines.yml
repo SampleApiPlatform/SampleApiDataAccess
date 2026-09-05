@@ -70,7 +70,8 @@ steps:
 - script: |
     ./efbundle --connection "$sampleapiDBConnectionstring"
   displayName: Run EF migration bundle
-
+  env:
+    sampleapiDBConnectionstring: $(sampleapiDBConnectionstring)
 
 # ---------------------------------------------------------
 # Test + Coverage
