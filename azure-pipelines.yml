@@ -155,7 +155,7 @@ steps:
   displayName: Debug DockerHub variables
 
 - script: |
-    echo "$DOCKERHUB_TOKEN" | docker login -u "$DOCKERHUB_USERNAME" --password-stdin
+    echo "$(DOCKERHUB_TOKEN)" | docker login -u "$(DOCKERHUB_USERNAME)" --password-stdin
   displayName: Docker Hub Login
 
 # ---------------------------------------------------------
