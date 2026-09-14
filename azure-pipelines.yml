@@ -2,26 +2,126 @@ trigger:
 - main
 
 pool:
-  vmImage: 'ubuntu-latest'
+  vmImage: ubuntu-latest
+
+variables:
+
+- name: solution
+  value: '**/*.sln'
+
+- name: buildPlatform
+  value: 'Any CPU'
+
+- name: buildConfiguration
+  value: 'Release'
+
+#this variable is necessary to allow the agent to give access to the agent to the NuGet packages.
+- name: NUGET_PACKAGES
+  value: $(Agent.TempDirectory)/.nuget/packages
+
 
 steps:
-- checkout: self
+
+# ---------------------------------------------------------
+# Restore
+# ---------------------------------------------------------
+- task: DotNetCoreCLI@2
+  displayName: Restore packages
+  inputs:
+    command: restore
+    projects: '$(solution)'
+
+# ---------------------------------------------------------
+# Build
+# ---------------------------------------------------------
+- task: DotNetCoreCLI@2
+  displayName: Build solution
+  inputs:
+    command: build
+    projects: '$(solution)'
+    arguments: '--configuration $(buildConfiguration)'
+
+
+# ---------------------------------------------------------
+# Install EF Toolsgit add
+# ---------------------------------------------------------
+- script: |
+    dotnet tool install --global dotnet-ef
+  displayName: Install EF Tools
+
+# ---------------------------------------------------------
+# Build EF migration bundle
+# ---------------------------------------------------------
+- script: |
+    cd SampleDataAccessApi
+    dotnet ef migrations bundle --output ../efbundle
+  displayName: Build EF migration bundle
+
+# ---------------------------------------------------------
+# Make bundle executable
+# ---------------------------------------------------------
+- script: |
+    chmod +x efbundle
+  displayName: Make EF bundle executable
+
+# ---------------------------------------------------------
+# Run EF migration bundle
+# ---------------------------------------------------------
+- script: |
+    ./efbundle --connection "$(sampleapiDBConnectionstring)"
+  displayName: Run EF migration bundle
+
+# ---------------------------------------------------------
+# Test + Coverage
+# ---------------------------------------------------------
+- script: |
+    dotnet test SampleDataAccessApi.sln --configuration Release --collect:"XPlat Code Coverage"
+  displayName: Run tests with coverage
+
+# ---------------------------------------------------------
+# Publish coverage
+# ---------------------------------------------------------
+- task: PublishCodeCoverageResults@1
+  displayName: Publish coverage
+  inputs:
+    codeCoverageTool: Cobertura
+    summaryFileLocation: '$(Agent.TempDirectory)/**/coverage.cobertura.xml'
+    reportDirectory: '$(Agent.TempDirectory)'
+
+# ---------------------------------------------------------
+# Build Docker image
+# ---------------------------------------------------------
+- task: Docker@2
+  displayName: Build Docker image
+  inputs:
+    command: build
+    Dockerfile: Dockerfile
+    repository: $(DOCKERHUB_USERNAME)/sampledataaccessapi
+    tags: |
+      latest
 
 - script: |
-    export DOCKER_BUILDKIT=1
-  displayName: Enable BuildKit
+    echo "$(DOCKERHUB_TOKEN)" | docker login -u "$(DOCKERHUB_USERNAME)" --password-stdin
+  displayName: Docker Hub Login
 
-- task: DockerInstaller@0
-  displayName: Install Docker
-
+# ---------------------------------------------------------
+# Push Docker image
+# ---------------------------------------------------------
 - script: |
-    docker build -t popdemar/sampledataaccessapi:latest .
-  displayName: Build Docker Image
+    docker push $(DOCKERHUB_USERNAME)/sampledataaccessapi:latest
+  displayName: Push Docker image
 
-- script: |
-    echo $(DOCKERHUB_TOKEN) | docker login -u popdemar --password-stdin
-  displayName: Docker Login
-
-- script: |
-    docker push popdemar/sampledataaccessapi:latest
-  displayName: Push Image to Docker Hub
+# ---------------------------------------------------------
+# Update ACA image
+# ---------------------------------------------------------
+- task: AzureCLI@2
+  displayName: Update ACA image
+  inputs:
+    azureSubscription: 'SampleDataAccessApi_ServiceConnection'
+    scriptType: bash
+    scriptLocation: inlineScript
+    inlineScript: |
+      az containerapp update \
+        --name sampledataaccessapi \
+        --resource-group SampleDataAccessApi_rg \
+        --image docker.io/$(DOCKERHUB_USERNAME)/sampledataaccessapi:latest
