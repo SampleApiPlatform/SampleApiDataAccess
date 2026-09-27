@@ -1,6 +1,4 @@
 using Microsoft.EntityFrameworkCore;
-using NuGet.SampleSharedModels.Interfaces;
-using NuGet.SampleSharedModels.Services;
 using SampleDataAccessApi.Data;
 using SampleDataAccessApi.Extensions;
 
