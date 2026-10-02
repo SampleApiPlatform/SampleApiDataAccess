@@ -11,7 +11,7 @@ namespace SampleDataAccessApi.Controllers;
 //If your method uses await, it must be async.
 //If your method returns a Task directly, it must NOT be async
 
-[Authorize]
+//[Authorize]: in the dapr context no need to use it asAzure is managing the connections as trusted
 [ApiController]
 [Route("api/movies")]
 public class MoviesController : ControllerBase
