@@ -1,6 +1,8 @@
 using Microsoft.EntityFrameworkCore;
+using SampleApi.Services.MovieServices;
 using SampleDataAccessApi.Data;
 using SampleDataAccessApi.Extensions;
+using SampleDataAccessApi.Interfaces.MovieInterfaces;
 
 
 var builder = WebApplication.CreateBuilder(args);
@@ -26,6 +28,7 @@ var builder = WebApplication.CreateBuilder(args);
 
 // Register services
 builder.Services.AddScoped<IMovieRepository, MovieRepository>();
+builder.Services.AddScoped<IMovieService, MovieService>();
 
 // EF Core SQL Azure with retry in case that there are transient connection issues
 builder.Services.AddDbContext<MoviesDbContext>(options =>
