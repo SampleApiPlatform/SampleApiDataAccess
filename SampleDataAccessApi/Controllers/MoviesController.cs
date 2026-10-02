@@ -35,23 +35,21 @@ public class MoviesController : ControllerBase
     [HttpGet]
     public async  Task<ActionResult<IEnumerable<MovieDTORead>>> GetAll()
     {
-        //try
-        //{
+        try
+        {
             var movies = await _movieService.GetAll();
             return Ok(movies);
-        //}
-        //catch (Exception ex)
-        //{
-        //    var message = $"MovieController.GetAll Exception: {ex.Message}";
+        }
+        catch (Exception ex)
+        {
+            var message = $"MovieController.GetAll Exception: {ex.Message}";
 
-        //    await _logger.LogAsync(
-        //        controllerName,
-        //        message,
-        //        LogLevel.Error
-        //    );
+           _logger.LogError(
+                message
+            );
 
-        //    return StatusCode(500, message);
-        //}
+            return StatusCode(500, message);
+        }
         
     }
 
