@@ -102,7 +102,9 @@ public class MoviesController : ControllerBase
             var serviceResult =await _movieService.Add(movieDTOAdd);
             if (!serviceResult.Success)
             {
-                _logger.LogWarning("MovieController.Create Failed: Reason={Reason}", ServiceResult<MovieDTORead>.ErrorsToString(serviceResult.Errors));
+                var errorText = string.Join("; ", serviceResult.Errors);
+                _logger.LogError("MovieController.Add Failed: {Errors}", errorText);
+                //_logger.LogWarning("MovieController.Create Failed: Reason={Reason}", ServiceResult<MovieDTORead>.ErrorsToString(serviceResult.Errors));
                 //await _logger.LogAsync(
                 //        controllerName,
                 //        $"Add . Entity Not Added. Reason: {ServiceResult<MovieDTORead>.ErrorsToString(serviceResult.Errors)}",
@@ -159,7 +161,9 @@ public class MoviesController : ControllerBase
             var serviceResult =await _movieService.Update(id, movieDTOUpdate);
             if (!serviceResult.Success)
             {
-                _logger.LogWarning("MovieController.Update Failed: Reason={Reason}", ServiceResult<MovieDTORead>.ErrorsToString(serviceResult.Errors));
+                var errorText = string.Join("; ", serviceResult.Errors);
+                _logger.LogWarning("MovieController.Update Failed: {Errors}", errorText);
+                //_logger.LogWarning("MovieController.Update Failed: Reason={Reason}", ServiceResult<MovieDTORead>.ErrorsToString(serviceResult.Errors));
                 //await _logger.LogAsync(
                 //        controllerName,
                 //        $"Update . Update Failed. Reason: {ServiceResult<MovieDTORead>.ErrorsToString(serviceResult.Errors)}",
@@ -204,7 +208,9 @@ public class MoviesController : ControllerBase
             var serviceResult = await _movieService.Delete(id);
             if (!serviceResult.Success)
             {
-                _logger.LogWarning("MovieController.Delete Failed: Reason={Reason}", ServiceResult<bool>.ErrorsToString(serviceResult.Errors));
+                var errorText = string.Join("; ", serviceResult.Errors);
+                _logger.LogWarning("MovieController.Delete Failed: {Errors}", errorText);
+                //_logger.LogWarning("MovieController.Delete Failed: Reason={Reason}", ServiceResult<bool>.ErrorsToString(serviceResult.Errors));
                 //await _logger.LogAsync(
                 //        controllerName,
                 //        $"Add . Delete Failed. Reason: {ServiceResult<bool>.ErrorsToString(serviceResult.Errors)}",

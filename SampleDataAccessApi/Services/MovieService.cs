@@ -23,7 +23,7 @@ public class MovieService : IMovieService
         _movieValidator = movieValidator;
     }
 
-    public async Task<IEnumerable<MovieDTORead>> GetAll()
+    public async Task<ServiceResult<IEnumerable<MovieDTORead>>> GetAll()
     {
         var movieEntities = await _movieRepository.GetAll();
         var moviesDTO = new List<MovieDTORead>();
@@ -31,16 +31,17 @@ public class MovieService : IMovieService
         {
             moviesDTO.Add(MovieMapping.MapFromMovieEntityToMovieDTORead(movieEntity));
         }
-        return moviesDTO;
+        return ServiceResult<IEnumerable<MovieDTORead>>.Ok(moviesDTO);
     }
-    public async Task<MovieDTORead?> GetById(string id)
+    public async Task<ServiceResult<MovieDTORead?>> GetById(string id)
     {
         var movieEntity = await _movieRepository.GetById(id);
 
         if (movieEntity == null)
-            return null;
+            return ServiceResult<MovieDTORead?>.Fail([$"Record with id: {id} not found"]);
 
-        return MovieMapping.MapFromMovieEntityToMovieDTORead(movieEntity);
+        var movieDTO = MovieMapping.MapFromMovieEntityToMovieDTORead(movieEntity);
+        return ServiceResult<MovieDTORead?>.Ok(movieDTO);
     }
     public async Task<ServiceResult<MovieDTORead>> Add(MovieDTOAdd movieDTOAdd)
     {
