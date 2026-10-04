@@ -37,8 +37,8 @@ public class MoviesController : ControllerBase
     {
         try
         {
-            var movies = await _movieService.GetAll();
-            return Ok(movies);
+            var serviceResult = await _movieService.GetAll();
+            return Ok(serviceResult);
         }
         catch (Exception ex)
         {
@@ -60,8 +60,8 @@ public class MoviesController : ControllerBase
     {
         try
         {
-            var MovieDTORead = await _movieService.GetById(id);
-            if (MovieDTORead == null)
+            var serviceResult = await _movieService.GetById(id);
+            if (serviceResult == null)
             {
                 _logger.LogInformation("MovieController.GetById Movie not found: {id}", id);
                 //await _logger.LogAsync(
@@ -70,7 +70,7 @@ public class MoviesController : ControllerBase
                 //        LogLevel.Warning);
                 return NotFound(new { id });
             }
-            return Ok(MovieDTORead);
+            return Ok(serviceResult);
         }
         catch (Exception ex)
         {
@@ -175,7 +175,7 @@ public class MoviesController : ControllerBase
             //            controllerName,
             //            $"Update . Update Successful. Id: {serviceResult.Data?.Id}",
             //            LogLevel.Warning);
-            return Ok(serviceResult.Data);
+            return Ok(serviceResult);
         }
         catch (Exception ex)
         {
@@ -223,7 +223,7 @@ public class MoviesController : ControllerBase
             //            controllerName,
             //            $"Add . Delete Successful. Id: {id}",
             //            LogLevel.Warning);
-            return Ok(serviceResult.Data); 
+            return Ok(serviceResult); 
         }
         catch (Exception ex)
         {
