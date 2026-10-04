@@ -122,7 +122,8 @@ public class MoviesController : ControllerBase
             //            controllerName,
             //            $"Add . Entity Added Successfully. id: {serviceResult.Data?.Id}",
             //            LogLevel.Information);
-            return CreatedAtAction(nameof(GetById), new { id = serviceResult.Data!.Id }, serviceResult.Data);
+            return Ok(serviceResult);
+            //return CreatedAtAction(nameof(GetById), new { id = serviceResult.Data!.Id }, serviceResult.Data);
             // null‑forgiving operator: serviceResult.Data!.Id
             // serviceResult.Data!.Id: serviceResult.Data can be null, so Data.Id would fail.
             // It tells the compiler:I know this value is not null here — trust me.        
