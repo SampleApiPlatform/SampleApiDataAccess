@@ -223,7 +223,7 @@ public class MoviesController : ControllerBase
             //            controllerName,
             //            $"Add . Delete Successful. Id: {id}",
             //            LogLevel.Warning);
-            return Ok(true); 
+            return Ok(serviceResult.Data); 
         }
         catch (Exception ex)
         {
