@@ -58,8 +58,8 @@ public class MoviesController : ControllerBase
     [HttpGet("{id}")]
     public async Task<ActionResult<MovieDTORead>> GetById(string id)
     {
-        //try
-        //{
+        try
+        {
             var MovieDTORead = await _movieService.GetById(id);
             if (MovieDTORead == null)
             {
@@ -71,9 +71,16 @@ public class MoviesController : ControllerBase
                 return NotFound(new { id });
             }
             return Ok(MovieDTORead);
-        //}
-        //catch (Exception ex)
-        //{
+        }
+        catch (Exception ex)
+        {
+             var message = $"MovieController.GetById Exception: {ex.Message}";
+
+           _logger.LogError(
+                message
+            );
+
+            return StatusCode(500, message);
         //    var message = $"MovieController.GetById Exception: {ex.Message}";
 
         //    await _logger.LogAsync(
@@ -83,15 +90,15 @@ public class MoviesController : ControllerBase
         //    );
 
         //    return StatusCode(500, message);
-        //}        
+        }        
     }
 
     //[Authorize]
     [HttpPost]
     public async Task<IActionResult> Add(MovieDTOAdd movieDTOAdd)
     {
-        //try
-        //{
+        try
+        {
             var serviceResult =await _movieService.Add(movieDTOAdd);
             if (!serviceResult.Success)
             {
@@ -119,9 +126,16 @@ public class MoviesController : ControllerBase
             // null‑forgiving operator: serviceResult.Data!.Id
             // serviceResult.Data!.Id: serviceResult.Data can be null, so Data.Id would fail.
             // It tells the compiler:I know this value is not null here — trust me.        
-        //}
-        //catch(Exception ex)
-        //{
+        }
+        catch(Exception ex)
+        {
+            var message = $"MovieController.Add Exception: {ex.Message}";
+
+           _logger.LogError(
+                message
+            );
+
+            return StatusCode(500, message);
         //    var message = $"MovieController.GetById Exception: {ex.Message}";
 
         //    await _logger.LogAsync(
@@ -131,7 +145,7 @@ public class MoviesController : ControllerBase
         //    );
 
         //    return StatusCode(500, message);
-        //}
+        }
         
     }
 
@@ -139,8 +153,8 @@ public class MoviesController : ControllerBase
     [HttpPut("{id}")]
     public async Task<IActionResult> Update(string id, MovieDTOUpdate movieDTOUpdate)
     {
-        //try
-        //{
+        try
+        {
             var serviceResult =await _movieService.Update(id, movieDTOUpdate);
             if (!serviceResult.Success)
             {
@@ -157,9 +171,16 @@ public class MoviesController : ControllerBase
             //            $"Update . Update Successful. Id: {serviceResult.Data?.Id}",
             //            LogLevel.Warning);
             return Ok(serviceResult.Data);
-        //}
-        //catch (Exception ex)
-        //{
+        }
+        catch (Exception ex)
+        {
+            var message = $"MovieController.Update Exception: {ex.Message}";
+
+           _logger.LogError(
+                message
+            );
+
+            return StatusCode(500, message);
         //    var message = $"MovieController.GetById Exception: {ex.Message}";
 
         //    await _logger.LogAsync(
@@ -169,7 +190,7 @@ public class MoviesController : ControllerBase
         //    );
 
         //    return StatusCode(500, message);
-        //}
+        }
         
     }
 
@@ -177,8 +198,8 @@ public class MoviesController : ControllerBase
     [HttpDelete("{id}")]
     public async Task<IActionResult> Delete(string id)
     {
-        //try
-        //{
+        try
+        {
             var serviceResult = await _movieService.Delete(id);
             if (!serviceResult.Success)
             {
@@ -196,9 +217,16 @@ public class MoviesController : ControllerBase
             //            $"Add . Delete Successful. Id: {id}",
             //            LogLevel.Warning);
             return Ok(true); 
-        //}
-        //catch(Exception ex)
-        //{
+        }
+        catch (Exception ex)
+        {
+            var message = $"MovieController.Delete Exception: {ex.Message}";
+
+           _logger.LogError(
+                message
+            );
+
+            return StatusCode(500, message);
         //    var message = $"MovieController.GetById Exception: {ex.Message}";
 
         //    await _logger.LogAsync(
@@ -208,7 +236,7 @@ public class MoviesController : ControllerBase
         //    );
 
         //    return StatusCode(500, message);
-        //}
+        }
         
     }
 }
