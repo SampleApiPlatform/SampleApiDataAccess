@@ -17,18 +17,15 @@ namespace SampleDataAccessApi.Controllers;
 public class MoviesController : ControllerBase
 {
     private readonly IMovieService _movieService;
-    //private readonly ISharedServicesClient _logger;
     private readonly ILogger<MoviesController> _logger;
     private readonly string controllerName = string.Empty;
 
     public MoviesController(IMovieService movieService, 
                             ILogger<MoviesController> logger
-                           //ISharedServicesClient logger,
                             )
     {
         _movieService = movieService;
         _logger = logger;
-        //_logger = logger;
         controllerName = GetType().Name;
     }
 
@@ -64,10 +61,6 @@ public class MoviesController : ControllerBase
             if (serviceResult == null)
             {
                 _logger.LogInformation("MovieController.GetById Movie not found: {id}", id);
-                //await _logger.LogAsync(
-                //        controllerName,
-                //        $"GetById . Entity Not found: {id}",
-                //        LogLevel.Warning);
                 return NotFound(new { id });
             }
             return Ok(serviceResult);
@@ -79,17 +72,7 @@ public class MoviesController : ControllerBase
            _logger.LogError(
                 message
             );
-
             return StatusCode(500, message);
-        //    var message = $"MovieController.GetById Exception: {ex.Message}";
-
-        //    await _logger.LogAsync(
-        //        controllerName,
-        //        message,
-        //        LogLevel.Error
-        //    );
-
-        //    return StatusCode(500, message);
         }        
     }
 
@@ -104,11 +87,6 @@ public class MoviesController : ControllerBase
             {
                 var errorText = string.Join("; ", serviceResult.Errors);
                 _logger.LogError("MovieController.Add Failed: {Errors}", errorText);
-                //_logger.LogWarning("MovieController.Create Failed: Reason={Reason}", ServiceResult<MovieDTORead>.ErrorsToString(serviceResult.Errors));
-                //await _logger.LogAsync(
-                //        controllerName,
-                //        $"Add . Entity Not Added. Reason: {ServiceResult<MovieDTORead>.ErrorsToString(serviceResult.Errors)}",
-                //        LogLevel.Warning);
                 return BadRequest(serviceResult.Errors);
             }
 
@@ -120,10 +98,6 @@ public class MoviesController : ControllerBase
             //the Location header (URL of the newly created resource)
             //the response body (your DTO)
             _logger.LogInformation("MovieController.Create Movie Created: {Id}", serviceResult.Data?.Id);
-            //await _logger.LogAsync(
-            //            controllerName,
-            //            $"Add . Entity Added Successfully. id: {serviceResult.Data?.Id}",
-            //            LogLevel.Information);
             return Ok(serviceResult);
             //return CreatedAtAction(nameof(GetById), new { id = serviceResult.Data!.Id }, serviceResult.Data);
             // null‑forgiving operator: serviceResult.Data!.Id
@@ -139,15 +113,6 @@ public class MoviesController : ControllerBase
             );
 
             return StatusCode(500, message);
-        //    var message = $"MovieController.GetById Exception: {ex.Message}";
-
-        //    await _logger.LogAsync(
-        //        controllerName,
-        //        message,
-        //        LogLevel.Error
-        //    );
-
-        //    return StatusCode(500, message);
         }
         
     }
@@ -163,18 +128,9 @@ public class MoviesController : ControllerBase
             {
                 var errorText = string.Join("; ", serviceResult.Errors);
                 _logger.LogWarning("MovieController.Update Failed: {Errors}", errorText);
-                //_logger.LogWarning("MovieController.Update Failed: Reason={Reason}", ServiceResult<MovieDTORead>.ErrorsToString(serviceResult.Errors));
-                //await _logger.LogAsync(
-                //        controllerName,
-                //        $"Update . Update Failed. Reason: {ServiceResult<MovieDTORead>.ErrorsToString(serviceResult.Errors)}",
-                //        LogLevel.Warning);
                 return BadRequest(serviceResult.Errors);
             }
             _logger.LogInformation("MovieController.Update Movie Updated: {Id}", serviceResult.Data?.Id);
-            //await _logger.LogAsync(
-            //            controllerName,
-            //            $"Update . Update Successful. Id: {serviceResult.Data?.Id}",
-            //            LogLevel.Warning);
             return Ok(serviceResult);
         }
         catch (Exception ex)
@@ -186,15 +142,6 @@ public class MoviesController : ControllerBase
             );
 
             return StatusCode(500, message);
-        //    var message = $"MovieController.GetById Exception: {ex.Message}";
-
-        //    await _logger.LogAsync(
-        //        controllerName,
-        //        message,
-        //        LogLevel.Error
-        //    );
-
-        //    return StatusCode(500, message);
         }
         
     }
@@ -210,19 +157,9 @@ public class MoviesController : ControllerBase
             {
                 var errorText = string.Join("; ", serviceResult.Errors);
                 _logger.LogWarning("MovieController.Delete Failed: {Errors}", errorText);
-                //_logger.LogWarning("MovieController.Delete Failed: Reason={Reason}", ServiceResult<bool>.ErrorsToString(serviceResult.Errors));
-                //await _logger.LogAsync(
-                //        controllerName,
-                //        $"Add . Delete Failed. Reason: {ServiceResult<bool>.ErrorsToString(serviceResult.Errors)}",
-                //        LogLevel.Warning);
                 return BadRequest(serviceResult.Errors);
             }
-
             _logger.LogInformation("MovieController.Delete Movie Deleted: {Id}", id);
-            //await _logger.LogAsync(
-            //            controllerName,
-            //            $"Add . Delete Successful. Id: {id}",
-            //            LogLevel.Warning);
             return Ok(serviceResult); 
         }
         catch (Exception ex)
@@ -234,16 +171,6 @@ public class MoviesController : ControllerBase
             );
 
             return StatusCode(500, message);
-        //    var message = $"MovieController.GetById Exception: {ex.Message}";
-
-        //    await _logger.LogAsync(
-        //        controllerName,
-        //        message,
-        //        LogLevel.Error
-        //    );
-
-        //    return StatusCode(500, message);
-        }
-        
+        }       
     }
 }

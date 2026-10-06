@@ -10,24 +10,7 @@ using SampleDataAccessApi.Validators;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// Load JWT settings
-//var jwtSettings = builder.Configuration.GetSection("Jwt");
-//var key = jwtSettings.GetValue<string>("Key")
-//    ?? throw new Exception("JWT Key is missing in configuration");
-//
-//var issuer = jwtSettings.GetValue<string>("Issuer")
-//    ?? throw new Exception("JWT Issuer is missing in configuration");
-//
-//var audience = jwtSettings.GetValue<string>("Audience")
-//    ?? throw new Exception("JWT Audience is missing in configuration");
 
-// Register services: DONT THEY COME FROM NUGET NOW??
-//var sharedServicesUrl = builder.Configuration["ServiceUrls:SharedServices"];
-//ArgumentException.ThrowIfNullOrWhiteSpace(sharedServicesUrl);
-//builder.Services.AddHttpClient<ISharedServicesClient, SharedServicesClient>(client =>
-//{
-//    client.BaseAddress = new Uri(sharedServicesUrl);
-//});
 
 // Register services
 builder.Services.AddScoped<IMovieRepository, MovieRepository>();
@@ -63,28 +46,6 @@ builder.Services.AddSwaggerDocumentation();
 // Controllers
 builder.Services.AddControllers();
 
-// ⭐ Register Authentication + JWT Bearer
-//builder.Services.AddAuthentication(options =>
-//{
-//    options.DefaultAuthenticateScheme = "JwtBearer";
-//    options.DefaultChallengeScheme = "JwtBearer";
-//})
-//.AddJwtBearer("JwtBearer", options =>
-//{
-//    options.TokenValidationParameters = new Microsoft.IdentityModel.Tokens.TokenValidationParameters
-//    {
-//        ValidateIssuer = true,
-//        ValidateAudience = true,
-//        ValidateLifetime = true,
-//        ValidateIssuerSigningKey = true,
-//
-//        ValidIssuer = issuer,
-//        ValidAudience = audience,
-//        IssuerSigningKey = new Microsoft.IdentityModel.Tokens.SymmetricSecurityKey(
-//            System.Text.Encoding.UTF8.GetBytes(key)
-//        )
-//    };
-//});
 // App->App
 builder.Services.AddAuthentication("Bearer")
     .AddJwtBearer("Bearer", options =>
