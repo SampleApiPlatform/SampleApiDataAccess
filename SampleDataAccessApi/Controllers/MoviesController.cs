@@ -1,3 +1,4 @@
+using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using NuGet.SampleSharedModels.DTO;
@@ -11,7 +12,7 @@ namespace SampleDataAccessApi.Controllers;
 //If your method uses await, it must be async.
 //If your method returns a Task directly, it must NOT be async
 
-//[Authorize]: in the dapr context no need to use it asAzure is managing the connections as trusted
+[Authorize(AuthenticationSchemes = JwtBearerDefaults.AuthenticationScheme, Policy = "AccessAsUser")]
 [ApiController]
 [Route("api/movies")]
 public class MoviesController : ControllerBase

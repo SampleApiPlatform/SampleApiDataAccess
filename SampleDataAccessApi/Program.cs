@@ -1,4 +1,6 @@
+using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.IdentityModel.Tokens;
 using NuGet.SampleSharedModels.Interfaces;
 using SampleApi.Services.MovieServices;
 using SampleDataAccessApi.Data;
@@ -47,20 +49,54 @@ builder.Services.AddSwaggerDocumentation();
 builder.Services.AddControllers();
 
 // App->App
-builder.Services.AddAuthentication("Bearer")
-    .AddJwtBearer("Bearer", options =>
+//builder.Services.AddAuthentication("Bearer")
+//    .AddJwtBearer("Bearer", options =>
+//    {
+//        options.Authority = "https://login.microsoftonline.com/9ca003dc-da5d-4b31-808b-9d52337fbf6a/v2.0";
+//        options.TokenValidationParameters = new Microsoft.IdentityModel.Tokens.TokenValidationParameters
+//        {
+//            ValidateAudience = true,
+//            ValidAudience = "api://c2c22245-dc03-4cb8-ad4e-4d3471f04ab6"
+//        };
+//    });
+// Authorization
+//builder.Services.AddAuthorization();
+
+// JWT from microsoft account
+// App->App  (accepts the same token sampleappapi received)
+var clientId = builder.Configuration["AzureAd:ClientId"];
+var appIdUri = builder.Configuration["AzureAd:Audience"];
+var tenantId = builder.Configuration["AzureAd:TenantId"];
+var scope    = builder.Configuration["AzureAd:Scope"] ?? "access_as_user";
+
+builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
+    .AddJwtBearer(options =>
     {
-        options.Authority = "https://login.microsoftonline.com/9ca003dc-da5d-4b31-808b-9d52337fbf6a/v2.0";
-        options.TokenValidationParameters = new Microsoft.IdentityModel.Tokens.TokenValidationParameters
+        options.Authority = $"https://login.microsoftonline.com/{tenantId}/v2.0";
+        options.TokenValidationParameters = new TokenValidationParameters
         {
             ValidateAudience = true,
-            ValidAudience = "api://c2c22245-dc03-4cb8-ad4e-4d3471f04ab6"
+            ValidAudiences   = new[] { appIdUri, clientId },
+            ClockSkew        = TimeSpan.FromMinutes(2)
         };
+        options.MapInboundClaims = false;
     });
 
+builder.Services.AddAuthorization(options =>
+{
+    options.AddPolicy("AccessAsUser", policy =>
+        policy.RequireAssertion(ctx =>
+        {
+            var scopeClaim = ctx.User.FindFirst(c => c.Type == "scp");
+            if (scopeClaim is null) return false;
 
-// Authorization
-builder.Services.AddAuthorization();
+            return scopeClaim.Value
+                .Split(' ', StringSplitOptions.RemoveEmptyEntries)
+                .Contains(scope, StringComparer.OrdinalIgnoreCase);
+        }));
+});
+//
+
 
 var app = builder.Build();
 
