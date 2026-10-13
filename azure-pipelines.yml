@@ -117,11 +117,11 @@ steps:
 - task: AzureCLI@2
   displayName: Update ACA image
   inputs:
-    azureSubscription: 'SampleDataAccessApi_ServiceConnection'
+    azureSubscription: 'SampleApiPlatform_ServiceConnection'
     scriptType: bash
     scriptLocation: inlineScript
     inlineScript: |
       az containerapp update \
         --name sampledataaccessapi \
-        --resource-group SampleDataAccessApi_rg \
+        --resource-group sampleApiPlatform_rg \
         --image docker.io/$(DOCKERHUB_USERNAME)/sampledataaccessapi:latest
