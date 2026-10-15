@@ -12,8 +12,6 @@ using SampleDataAccessApi.Validators;
 
 var builder = WebApplication.CreateBuilder(args);
 
-
-
 // Register services
 builder.Services.AddScoped<IMovieRepository, MovieRepository>();
 builder.Services.AddScoped<IMovieService, MovieService>();
@@ -47,20 +45,6 @@ builder.Services.AddSwaggerDocumentation();
 
 // Controllers
 builder.Services.AddControllers();
-
-// App->App
-//builder.Services.AddAuthentication("Bearer")
-//    .AddJwtBearer("Bearer", options =>
-//    {
-//        options.Authority = "https://login.microsoftonline.com/9ca003dc-da5d-4b31-808b-9d52337fbf6a/v2.0";
-//        options.TokenValidationParameters = new Microsoft.IdentityModel.Tokens.TokenValidationParameters
-//        {
-//            ValidateAudience = true,
-//            ValidAudience = "api://c2c22245-dc03-4cb8-ad4e-4d3471f04ab6"
-//        };
-//    });
-// Authorization
-//builder.Services.AddAuthorization();
 
 // JWT from microsoft account
 // App->App  (accepts the same token sampleappapi received)
