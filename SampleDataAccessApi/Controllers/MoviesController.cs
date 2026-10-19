@@ -21,7 +21,9 @@ public class MoviesController : ControllerBase
     private readonly ILogger<MoviesController> _logger;
     private readonly string controllerName = string.Empty;
 
-    public MoviesController(IMovieService movieService, 
+    public MoviesController(
+                            //IMovieService movieService, 
+                            IMovieService movieService,
                             ILogger<MoviesController> logger
                             )
     {

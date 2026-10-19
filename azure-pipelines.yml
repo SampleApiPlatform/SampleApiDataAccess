@@ -1,5 +1,8 @@
 trigger:
-- main
+  branches:
+      include:
+        - master          # oder master, je nachdem wie der Hauptbranch heißt
+        - feature/*     # Alle Branches, die mit feature/ beginnen
 
 pool:
   vmImage: ubuntu-latest
