@@ -30,7 +30,13 @@ builder.Services.AddSingleton(sp =>
     //var q   = cfg["ServiceBus:QueueName"]
     //          ?? throw new InvalidOperationException("ServiceBus:QueueName missing");
 
-    var client = new ServiceBusClient(ns, new DefaultAzureCredential());
+    //we pickup explicitly the system managed identity of samplesataccessapi. The defult one that should also that gives issues.
+    var credential = new ManagedIdentityCredential(
+        ManagedIdentityId.SystemAssigned
+    );
+
+    var client = new ServiceBusClient(ns, credential);
+    //var client = new ServiceBusClient(ns, new DefaultAzureCredential());
     return client;
     //return client.CreateReceiver(q);      // disposed when the application shuts down
 });
