@@ -45,9 +45,15 @@ public class MovieBusService : IMovieBusService
     }
     public async Task<ServiceResult<MovieDTORead>> Add(MovieDTORead movieDTOAdd)
     {
+        // we need to this otherwise the movie is inserted in the table without an Id
+        var movieDTOAdd1 = new MovieDTOAdd()
+        {
+            Title = movieDTOAdd.Title,
+            Year = movieDTOAdd.Year
+        };
         var serviceResult = new ServiceResult<MovieDTORead>();
-        // map
-        var movieEntity = MovieMapping.MapFromMovieDTOReadToMovieEntity(movieDTOAdd);
+        // map               
+        var movieEntity = MovieMapping.MapFromMovieDTOAddToMovieEntity(movieDTOAdd1);
         // validate
         var validationResult = _movieValidator.Validate(movieEntity);
         if (!validationResult.IsValid)
