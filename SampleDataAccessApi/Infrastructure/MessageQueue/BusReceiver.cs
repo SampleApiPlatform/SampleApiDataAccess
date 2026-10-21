@@ -1,5 +1,6 @@
 using System.Text.Json;
 using Azure.Messaging.ServiceBus;
+using Microsoft.Azure.Amqp.Framing;
 using NuGet.SampleSharedModels.DTO;
 
 public class BusReceiver: IBusReceiver
@@ -52,7 +53,7 @@ public class BusReceiver: IBusReceiver
         catch (Exception ex) when (ex is not OperationCanceledException)
         {
             var queueName = _config["ServiceBus:QueueName"];
-            _logger.LogError(ex, "Fehler beim Empfangen aus '{Queue}'", queueName);
+            _logger.LogError(ex, "Error when receiving from the queue '{Queue}'", queueName);
             throw;
         }
 
@@ -74,7 +75,7 @@ public class BusReceiver: IBusReceiver
         catch (JsonException ex)
         {
             _logger.LogError(ex,
-                "Ungültiges JSON für MessageId '{MessageId}'. → Dead Letter.",
+                "invalid JSON for MessageId '{MessageId}'. → Dead Letter.",
                 message.MessageId);
             await _receiver.DeadLetterMessageAsync(message,
                 deadLetterReason: "InvalidPayload",
@@ -92,7 +93,7 @@ public class BusReceiver: IBusReceiver
                     
                     if (payload.Data == null)
                     {
-                        _logger.LogWarning("Add : Data is null. Ignoriere.");
+                        _logger.LogWarning("Add : Data is null for MessageId: {MessageId}. Ignoriere.", message.MessageId);
                         break;
                     }
                     await onAdd(payload.Data);
@@ -102,7 +103,7 @@ public class BusReceiver: IBusReceiver
                     var recordToUpdate = payload.Data as MovieDTORead;
                     if (recordToUpdate == null || recordToUpdate.Id == null )
                     {
-                        _logger.LogWarning("Update ohne RecordId/Data. Ignoriere.");
+                        _logger.LogWarning("Update without is/Data for MessageId: {MessageId}. Ignored.", message.MessageId);
                         break;
                     }
                     await onUpdate(payload.Data);
@@ -112,7 +113,7 @@ public class BusReceiver: IBusReceiver
                     var recordToDelete = payload.Data as MovieDTORead;
                     if (recordToDelete == null || recordToDelete.Id == null)
                     {
-                        _logger.LogWarning("Delete ohne RecordId. Ignoriere.");
+                        _logger.LogWarning("Delete without id for MessageId: {MessageId}. Ignored.", message.MessageId);
                         break;
                     }
                     await onDelete(payload.Data);
@@ -120,20 +121,20 @@ public class BusReceiver: IBusReceiver
 
                 case MessageAction.None:
                 default:
-                    _logger.LogInformation("Aktion 'None' für RecordId. Ignoriere.");
+                    _logger.LogInformation("Aktion 'None' for MessageId: {MessageId}. Ignored.", message.MessageId);
                     break;
             }
 
             // Erfolgreich → Acknowledge
             await _receiver.CompleteMessageAsync(message, cancellationToken);
             _logger.LogInformation(
-                "Bericht verarbeitet. Action={Action}, MessageId={MessageId}",
+                "Message processed. Action={Action}, MessageId={MessageId}",
                 payload.Action, message.MessageId);
         }
         catch (OperationCanceledException)
         {
             // Shutdown → Lock läuft aus, Message kommt automatisch zurück
-            _logger.LogInformation("Shutdown während Verarbeitung MessageId '{MessageId}'.",
+            _logger.LogInformation("Shutdown while Processing MessageId '{MessageId}'.",
                 message.MessageId);
             throw;
         }
@@ -141,7 +142,7 @@ public class BusReceiver: IBusReceiver
         {
             // Transienter Fehler (DB-Timeout, HTTP etc.) → Retry
             _logger.LogError(ex,
-                "Verarbeitungsfehler MessageId '{MessageId}', DeliveryCount={Count}. → Abandon.",
+                "Error while processing MessageId '{MessageId}', DeliveryCount={Count}. → Abandon.",
                 message.MessageId, message.ApplicationProperties.Count);
             await _receiver.AbandonMessageAsync(message, cancellationToken: cancellationToken);
         }

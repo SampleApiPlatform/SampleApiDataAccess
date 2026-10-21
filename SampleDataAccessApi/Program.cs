@@ -1,4 +1,5 @@
 using System.Text.Json;
+using System.Text.Json.Serialization;
 using Azure.Identity;
 using Azure.Messaging.ServiceBus;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
@@ -55,7 +56,8 @@ builder.Services.AddSingleton<JsonSerializerOptions>(sp =>
     return new JsonSerializerOptions
     {
         PropertyNameCaseInsensitive = true,
-        ReadCommentHandling = JsonCommentHandling.Skip
+        ReadCommentHandling = JsonCommentHandling.Skip,
+        Converters = { new JsonStringEnumConverter() } //alllows to deserialize string Add into 0, etc.
     };
 });
 // 4. BusReceiver als Scoped
