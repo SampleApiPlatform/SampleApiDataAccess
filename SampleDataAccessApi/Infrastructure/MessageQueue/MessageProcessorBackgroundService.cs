@@ -1,6 +1,7 @@
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using NuGet.SampleSharedModels.DTO;
+using NuGet.SampleSharedModels.Interfaces.ServiceBus;
 using SampleApi.Services.MovieServices;
 using SampleDataAccessApi.Interfaces.MovieInterfaces;
 using System.Threading;

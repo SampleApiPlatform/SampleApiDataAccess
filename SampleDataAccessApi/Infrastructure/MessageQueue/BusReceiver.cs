@@ -1,7 +1,8 @@
 using System.Text.Json;
 using Azure.Messaging.ServiceBus;
-using Microsoft.Azure.Amqp.Framing;
 using NuGet.SampleSharedModels.DTO;
+using NuGet.SampleSharedModels.DTO.ServiceBus;
+using NuGet.SampleSharedModels.Interfaces.ServiceBus;
 
 public class BusReceiver: IBusReceiver
 {
@@ -61,7 +62,7 @@ public class BusReceiver: IBusReceiver
             return; // Timeout ohne Message → Schleife im Hintergrund-Service macht weiter
 
         // ── 2. Phase 1: Deserialisieren (nicht reparabel bei Fehler) ──
-        BusPayload<T>? payload;
+        BusPayloadDTO<T>? payload;
         try
         {
             payload = DeserializePayload<T>(message);
@@ -148,7 +149,7 @@ public class BusReceiver: IBusReceiver
         }
     }
 
-    private BusPayload<T>? DeserializePayload<T>(ServiceBusReceivedMessage message)
+    private BusPayloadDTO<T>? DeserializePayload<T>(ServiceBusReceivedMessage message)
 {
     if (message.Body.IsEmpty || message.Body.Length == 0)
     {
@@ -173,7 +174,7 @@ public class BusReceiver: IBusReceiver
             NumberHandling = System.Text.Json.Serialization.JsonNumberHandling.AllowReadingFromString
         };
 
-        return JsonSerializer.Deserialize<BusPayload<T>>(json, options);
+        return JsonSerializer.Deserialize<BusPayloadDTO<T>>(json, options);
         }
         catch (JsonException ex)
         {
@@ -184,24 +185,5 @@ public class BusReceiver: IBusReceiver
     }
 }
 
-//TODO: this code needs to move somewhere else
-public interface IBusReceiver
-{
-    //?? Func
-    Task ReceiveAsync<T>(
-        Func<T?, Task> onUpdate,
-        Func<T?, Task> onDelete,          // RecordId wird durchgereicht
-        Func<T?, Task> onAdd,
-        TimeSpan? longPollTimeout = null,
-        CancellationToken cancellationToken = default);
-}
-public enum MessageAction {Add, Update, Delete, None};
-
-//This is the version to use not the one defined in sampleappapi.
-public record BusPayload<T>
-{
-    public MessageAction Action { get; init; } = MessageAction.None;
-    public T? Data { get; init; } // Data is always required. Always will be there
-}
 
 

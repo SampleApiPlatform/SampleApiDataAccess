@@ -6,6 +6,7 @@ using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using NuGet.SampleSharedModels.Interfaces;
+using NuGet.SampleSharedModels.Interfaces.ServiceBus;
 using SampleApi.Services.MovieServices;
 using SampleDataAccessApi.Data;
 using SampleDataAccessApi.Extensions;
