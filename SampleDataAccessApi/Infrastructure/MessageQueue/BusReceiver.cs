@@ -148,17 +148,38 @@ public class BusReceiver: IBusReceiver
     }
 
     private BusPayload<T>? DeserializePayload<T>(ServiceBusReceivedMessage message)
+{
+    if (message.Body.IsEmpty || message.Body.Length == 0)
     {
-        if (message.Body.IsEmpty || message.Body.Length == 0)
-        {
-            _logger.LogWarning("Leere Payload für MessageId '{MessageId}'. Verwerfe.",
-                message.MessageId);
-            return null;
-        }
+        _logger.LogWarning("Emty Payload. MessageId '{MessageId}'. Discard.",
+            message.MessageId);
+        return null;
+    }
 
-        // JsonSerializer.Deserialize wirft JsonException bei ungültigem JSON
-        // → wird oben gefangen und in die DLQ geleitet
-        return JsonSerializer.Deserialize<BusPayload<T>>(message.Body, _jsonOptions);
+    try
+    {
+        // Option A: Explizit als String lesen (robusteste Methode bei Fehlern)
+        string json = message.Body.ToString(); 
+        
+        // Debug-Log: Prüfen, ob das JSON wirklich ankommt
+        _logger.LogDebug("Raw JSON: {Json}", json);
+
+        var options = new JsonSerializerOptions(_jsonOptions)
+        {
+            PropertyNameCaseInsensitive = true, // Wichtig!
+            ReadCommentHandling = JsonCommentHandling.Skip,
+            AllowTrailingCommas = true,
+            NumberHandling = System.Text.Json.Serialization.JsonNumberHandling.AllowReadingFromString
+        };
+
+        return JsonSerializer.Deserialize<BusPayload<T>>(json, options);
+        }
+        catch (JsonException ex)
+        {
+            _logger.LogError(ex, "JSON Parse Error. Raw Content: {Content}", 
+                message.Body.ToString());
+            throw; // Wird oben gefangen -> DLQ
+        }
     }
 }
 
@@ -178,8 +199,8 @@ public enum MessageAction {Add, Update, Delete, None};
 //This is the version to use not the one defined in sampleappapi.
 public record BusPayload<T>
 {
-    public required MessageAction Action { get; init; }
-    public required T Data { get; init; } // Data is always required. Always will be there
+    public MessageAction Action { get; init; } = MessageAction.None;
+    public T? Data { get; init; } // Data is always required. Always will be there
 }
 
 
