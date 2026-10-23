@@ -22,7 +22,7 @@ namespace SampleDataAccessApi.Migrations
 
             SqlServerModelBuilderExtensions.UseIdentityColumns(modelBuilder);
 
-            modelBuilder.Entity("Request", b =>
+            modelBuilder.Entity("BusRequest", b =>
                 {
                     b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
@@ -33,12 +33,21 @@ namespace SampleDataAccessApi.Migrations
                         .HasColumnType("datetime2")
                         .HasDefaultValueSql("GETUTCDATE()");
 
-                    b.Property<bool?>("IsSucceeded")
+                    b.Property<string>("MessageAction")
                         .IsRequired()
-                        .HasColumnType("bit");
+                        .HasMaxLength(20)
+                        .HasColumnType("nvarchar(20)");
+
+                    b.Property<string>("MessageData")
+                        .HasColumnType("nvarchar(max)");
 
                     b.Property<Guid>("MessageId")
                         .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("MessageStatus")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("nvarchar(20)");
 
                     b.Property<DateTime>("UpdatedOn")
                         .ValueGeneratedOnAdd()
@@ -47,7 +56,7 @@ namespace SampleDataAccessApi.Migrations
 
                     b.HasKey("Id");
 
-                    b.ToTable("Requests");
+                    b.ToTable("BusRequests");
                 });
 
             modelBuilder.Entity("SampleDataAccessApi.Models.Movie", b =>

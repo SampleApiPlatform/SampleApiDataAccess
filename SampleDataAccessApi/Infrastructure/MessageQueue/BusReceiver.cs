@@ -2,6 +2,7 @@ using System.Text.Json;
 using Azure.Messaging.ServiceBus;
 using NuGet.SampleSharedModels.DTO;
 using NuGet.SampleSharedModels.DTO.ServiceBus;
+using NuGet.SampleSharedModels.Enums.EnumsServiceBus;
 using NuGet.SampleSharedModels.Interfaces.ServiceBus;
 
 public class BusReceiver: IBusReceiver
