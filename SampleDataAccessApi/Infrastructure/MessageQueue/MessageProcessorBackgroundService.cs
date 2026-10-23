@@ -45,9 +45,9 @@ public class MessageProcessorBackgroundService : BackgroundService
 
                 // Aufruf von ReceiveAsync
                 await receiver.ReceiveAsync<MovieDTORead>(
-                    onAdd: data => data != null ? service.Add(data) : Task.CompletedTask,
-                    onUpdate: data => data != null ? service.Update(data) : Task.CompletedTask,
-                    onDelete: data => data != null ? service.Delete(data) : Task.CompletedTask, 
+                    onUpdate: (data, messageId) => data != null ? service.Update(data, messageId) : Task.CompletedTask,                                        
+                    onDelete: (data, messageId) => data != null ? service.Delete(data, messageId) : Task.CompletedTask, 
+                    onAdd: (data, messageId) => data != null ? service.Add(data, messageId) : Task.CompletedTask,
                     longPollTimeout: TimeSpan.FromSeconds(30),
                     cancellationToken: stoppingToken
                 );

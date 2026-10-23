@@ -65,6 +65,7 @@ builder.Services.AddSingleton<JsonSerializerOptions>(sp =>
 builder.Services.AddScoped<IBusReceiver, BusReceiver>();
 // Register services
 builder.Services.AddScoped<IMovieRepository, MovieRepository>();
+builder.Services.AddScoped<IBusRequestRepository, BusRequestRepository>();
 
 //builder.Services.AddScoped<IMovieService, MovieService>();
 builder.Services.AddScoped<IMovieBusService, MovieBusService>();

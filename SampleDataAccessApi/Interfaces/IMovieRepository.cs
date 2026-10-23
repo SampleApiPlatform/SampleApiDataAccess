@@ -17,3 +17,4 @@ public interface IMovieRepository
     Task Update(Movie movie);
     Task Delete(Movie movie);
 }
+

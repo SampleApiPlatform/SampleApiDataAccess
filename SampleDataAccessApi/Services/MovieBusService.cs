@@ -1,5 +1,8 @@
+using System.Text.Json;
+using System.Transactions;
 using Microsoft.EntityFrameworkCore;
 using NuGet.SampleSharedModels.DTO;
+using NuGet.SampleSharedModels.Enums.EnumsServiceBus;
 using NuGet.SampleSharedModels.Interfaces;
 using NuGet.SampleSharedModels.Results;
 using SampleDataAccessApi.Interfaces.MovieInterfaces;
@@ -15,11 +18,16 @@ public class MovieBusService : IMovieBusService
     //If your method uses await, it must be async.
     //If your method returns a Task directly, it must NOT be async
     private readonly IMovieRepository _movieRepository;
+    public readonly IBusRequestRepository _busRequestRepository;
     private readonly IValidator<Movie> _movieValidator;
 
-    public MovieBusService(IMovieRepository movieRepository, IValidator<Movie> movieValidator)
+    public MovieBusService(
+        IMovieRepository movieRepository, 
+        IBusRequestRepository busRequestRepository,
+        IValidator<Movie> movieValidator)
     {
         _movieRepository = movieRepository;
+        _busRequestRepository = busRequestRepository;
         _movieValidator = movieValidator;
     }
 
@@ -43,7 +51,7 @@ public class MovieBusService : IMovieBusService
         var movieDTO = MovieMapping.MapFromMovieEntityToMovieDTORead(movieEntity);
         return ServiceResult<MovieDTORead?>.Ok(movieDTO);
     }
-    public async Task<ServiceResult<MovieDTORead>> Add(MovieDTORead movieDTOAdd)
+    public async Task<ServiceResult<MovieDTORead>> Add(MovieDTORead movieDTOAdd, Guid messageId)
     {
         // we need to this otherwise the movie is inserted in the table without an Id
         var movieDTOAdd1 = new MovieDTOAdd()
@@ -51,19 +59,54 @@ public class MovieBusService : IMovieBusService
             Title = movieDTOAdd.Title,
             Year = movieDTOAdd.Year
         };
-        var serviceResult = new ServiceResult<MovieDTORead>();
+        //var serviceResult = new ServiceResult<MovieDTORead>();
         // map               
         var movieEntity = MovieMapping.MapFromMovieDTOAddToMovieEntity(movieDTOAdd1);
         // validate
         var validationResult = _movieValidator.Validate(movieEntity);
         if (!validationResult.IsValid)
-            return ServiceResult<MovieDTORead>.Fail(validationResult.Errors); 
-        //EF Core tracks the entity that we have just added
-        await _movieRepository.Add(movieEntity);  
-        var dtoRead = MovieMapping.MapFromMovieEntityToMovieDTORead(movieEntity);      
-        return ServiceResult<MovieDTORead>.Ok(dtoRead);
+            return ServiceResult<MovieDTORead>.Fail(validationResult.Errors);
+        using var scope = new TransactionScope(TransactionScopeAsyncFlowOption.Enabled); 
+        try
+        {
+           //EF Core tracks the entity that we have just added
+            await _movieRepository.Add(movieEntity);  
+            var dtoRead = MovieMapping.MapFromMovieEntityToMovieDTORead(movieEntity); 
+            // create a record in a busRequest table  
+            var busRequest = new BusRequest()
+            {
+                MessageAction = MessageAction.Add,
+                // inside this MessageData we have the id that we can use to lookup at the Movies table
+                MessageData = JsonSerializer.Serialize(dtoRead),
+                MessageId = messageId,
+                MessageStatus = MessageStatus.Success
+            }; 
+            await _busRequestRepository.Add(busRequest); 
+            // 3. Alles erfolgreich → Commit
+            scope.Complete();
+            return ServiceResult<MovieDTORead>.Ok(dtoRead);
+        }
+        catch (DbUpdateException ex)
+        {
+            var busRequest = new BusRequest()
+            {
+                MessageAction = MessageAction.Add,
+                // MessageData does not contain the Id of the object because it was not inserted
+                MessageData = JsonSerializer.Serialize(movieDTOAdd1),
+                MessageId = messageId,
+                MessageStatus = MessageStatus.Fail
+            }; 
+            // Bei Fehler wird automatisch zurückgerollt
+            // (scope.Dispose() wird aufgerufen, wenn er aus der using-Block
+            //  austritt, ohne dass Complete() aufgerufen wurde)
+            throw new Exception(
+                $"Failed to add to Add Movie in the database: {ex.Message}", ex);
+        }
+        // scope wird hier automatisch disposed → Rollback wenn nicht complete                
+            
+        
     }  
-    public async Task<ServiceResult<MovieDTORead>> Update(MovieDTORead movieDTOUpdate)
+    public async Task<ServiceResult<MovieDTORead>> Update(MovieDTORead movieDTOUpdate, Guid messageId)
     {
         //MovieDTORead?? = Because the service might not find the movie, and you need a way to express that possibility in the return type.
         //The service should always return MovieDTORead, never MovieDTOUpdate
@@ -92,7 +135,7 @@ public class MovieBusService : IMovieBusService
         var dtoRead = MovieMapping.MapFromMovieEntityToMovieDTORead(movieEntity);      
         return ServiceResult<MovieDTORead>.Ok(dtoRead);
     }
-    public async Task<ServiceResult<bool>> Delete(MovieDTORead movieDTODelete)
+    public async Task<ServiceResult<bool>> Delete(MovieDTORead movieDTODelete, Guid messageId)
     {
         //if the entity cannot be found the EF will return false.
         //var deleted = await _movieRepository.Delete(id);

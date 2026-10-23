@@ -38,9 +38,9 @@ public class BusReceiver: IBusReceiver
     public async Task ReceiveAsync<T>(
         // Delegate = function stored in a variable 
         // Func<T?, Task>: Function pass as a variable = Delegate with input parameter and retruns a Task
-        Func<T?, Task> onUpdate, // expects a delegate a function that returns a value an not an action that returns nothing. We are passing as a parameter what the code will be executing when an update happens
-        Func<T?, Task> onDelete,     // ditto for delete
-        Func<T?, Task> onAdd,            // ditto for add
+        Func<T?, Guid, Task> onUpdate, // expects a delegate a function that returns a value an not an action that returns nothing. We are passing as a parameter what the code will be executing when an update happens
+        Func<T?, Guid, Task> onDelete,     // ditto for delete
+        Func<T?, Guid, Task> onAdd,            // ditto for add
         TimeSpan? longPollTimeout = null, //
         CancellationToken cancellationToken = default)
     {
@@ -98,7 +98,7 @@ public class BusReceiver: IBusReceiver
                         _logger.LogWarning("Add : Data is null for MessageId: {MessageId}. Ignoriere.", message.MessageId);
                         break;
                     }
-                    await onAdd(payload.Data);
+                    await onAdd(payload.Data, Guid.Parse(message.MessageId));
                     break;
 
                 case MessageAction.Update:
@@ -108,7 +108,7 @@ public class BusReceiver: IBusReceiver
                         _logger.LogWarning("Update without is/Data for MessageId: {MessageId}. Ignored.", message.MessageId);
                         break;
                     }
-                    await onUpdate(payload.Data);
+                    await onUpdate(payload.Data, Guid.Parse(message.MessageId));
                     break;
 
                 case MessageAction.Delete:
@@ -118,7 +118,7 @@ public class BusReceiver: IBusReceiver
                         _logger.LogWarning("Delete without id for MessageId: {MessageId}. Ignored.", message.MessageId);
                         break;
                     }
-                    await onDelete(payload.Data);
+                    await onDelete(payload.Data, Guid.Parse(message.MessageId));
                     break;
 
                 case MessageAction.None:
@@ -150,7 +150,7 @@ public class BusReceiver: IBusReceiver
         }
     }
 
-    private BusPayloadDTO<T>? DeserializePayload<T>(ServiceBusReceivedMessage message)
+private BusPayloadDTO<T>? DeserializePayload<T>(ServiceBusReceivedMessage message)
 {
     if (message.Body.IsEmpty || message.Body.Length == 0)
     {
