@@ -20,15 +20,18 @@ public class MovieBusService : IMovieBusService
     private readonly IMovieRepository _movieRepository;
     public readonly IBusRequestRepository _busRequestRepository;
     private readonly IValidator<Movie> _movieValidator;
+    private readonly IUnitOfWork _unitOfWork;
 
     public MovieBusService(
         IMovieRepository movieRepository, 
         IBusRequestRepository busRequestRepository,
-        IValidator<Movie> movieValidator)
+        IValidator<Movie> movieValidator,
+        IUnitOfWork unitOfWork)
     {
         _movieRepository = movieRepository;
         _busRequestRepository = busRequestRepository;
         _movieValidator = movieValidator;
+        _unitOfWork = unitOfWork;
     }
 
     public async Task<ServiceResult<IEnumerable<MovieDTORead>>> GetAll()
@@ -66,7 +69,7 @@ public class MovieBusService : IMovieBusService
         var validationResult = _movieValidator.Validate(movieEntity);
         if (!validationResult.IsValid)
             return ServiceResult<MovieDTORead>.Fail(validationResult.Errors);
-        using var scope = new TransactionScope(TransactionScopeAsyncFlowOption.Enabled); 
+        await using var transaction = await _unitOfWork.BeginTransactionAsync();
         try
         {
            //EF Core tracks the entity that we have just added
@@ -83,11 +86,12 @@ public class MovieBusService : IMovieBusService
             }; 
             await _busRequestRepository.Add(busRequest); 
             // 3. Alles erfolgreich → Commit
-            scope.Complete();
+            await transaction.CommitAsync();
             return ServiceResult<MovieDTORead>.Ok(dtoRead);
         }
         catch (DbUpdateException ex)
         {
+            await transaction.RollbackAsync();
             var busRequest = new BusRequest()
             {
                 MessageAction = MessageAction.Add,
@@ -130,10 +134,48 @@ public class MovieBusService : IMovieBusService
         var validationResult = _movieValidator.Validate(movieEntity);
         if (!validationResult.IsValid)
             return ServiceResult<MovieDTORead>.Fail(validationResult.Errors); 
+        await using var transaction = await _unitOfWork.BeginTransactionAsync();
+        try
+        {
+           //EF Core tracks the entity that we have just added
+           await _movieRepository.Update(movieEntity); //<-
+           var dtoRead = MovieMapping.MapFromMovieEntityToMovieDTORead(movieEntity);      
+            // create a record in a busRequest table  
+            var busRequest = new BusRequest()
+            {
+                MessageAction = MessageAction.Update,
+                // inside this MessageData we have the id that we can use to lookup at the Movies table
+                MessageData = JsonSerializer.Serialize(dtoRead),
+                MessageId = messageId,
+                MessageStatus = MessageStatus.Success
+            }; 
+            await _busRequestRepository.Add(busRequest); 
+            // 3. Alles erfolgreich → Commit
+            await transaction.CommitAsync();
+            return ServiceResult<MovieDTORead>.Ok(dtoRead);
+        }
+        catch (DbUpdateException ex)
+        {
+            await transaction.RollbackAsync();
+            var busRequest = new BusRequest()
+            {
+                MessageAction = MessageAction.Add,
+                // MessageData does not contain the Id of the object because it was not inserted
+                MessageData = JsonSerializer.Serialize(movieDTOUpdate),
+                MessageId = messageId,
+                MessageStatus = MessageStatus.Fail
+            }; 
+            // Bei Fehler wird automatisch zurückgerollt
+            // (scope.Dispose() wird aufgerufen, wenn er aus der using-Block
+            //  austritt, ohne dass Complete() aufgerufen wurde)
+            throw new Exception(
+                $"Failed to add to Update Movie in the database: {ex.Message}", ex);
+        }
 
-        await _movieRepository.Update(movieEntity);
-        var dtoRead = MovieMapping.MapFromMovieEntityToMovieDTORead(movieEntity);      
-        return ServiceResult<MovieDTORead>.Ok(dtoRead);
+
+
+
+        
     }
     public async Task<ServiceResult<bool>> Delete(MovieDTORead movieDTODelete, Guid messageId)
     {
@@ -148,8 +190,42 @@ public class MovieBusService : IMovieBusService
         //var validation = _movieValidator.Validate(movie);
         //if (!validation.IsValid)
         //    return ServiceResult<bool>.Fail(validation.Errors);
-        await _movieRepository.Delete(movie);
-        return ServiceResult<bool>.Ok(true);
+        await using var transaction = await _unitOfWork.BeginTransactionAsync();
+        try
+        {
+           //EF Core tracks the entity that we have just added
+           await _movieRepository.Delete(movie);//<-
+           var dtoRead = MovieMapping.MapFromMovieEntityToMovieDTORead(movie);      
+            // create a record in a busRequest table  
+            var busRequest = new BusRequest()
+            {
+                MessageAction = MessageAction.Delete,
+                // inside this MessageData we have the id that we can use to lookup at the Movies table
+                MessageData = JsonSerializer.Serialize(dtoRead),
+                MessageId = messageId,
+                MessageStatus = MessageStatus.Success
+            }; 
+            await _busRequestRepository.Add(busRequest); 
+            // 3. Alles erfolgreich → Commit
+            await transaction.CommitAsync();
+            return ServiceResult<bool>.Ok(true);
+        }
+        catch (DbUpdateException ex)
+        {
+            await transaction.RollbackAsync();
+            var busRequest = new BusRequest()
+            {
+                MessageAction = MessageAction.Add,
+                // MessageData does not contain the Id of the object because it was not inserted
+                MessageData = JsonSerializer.Serialize(movieDTODelete),
+                MessageId = messageId,
+                MessageStatus = MessageStatus.Fail
+            }; 
+            // Bei Fehler wird automatisch zurückgerollt
+            // (scope.Dispose() wird aufgerufen, wenn er aus der using-Block
+            //  austritt, ohne dass Complete() aufgerufen wurde)
+            throw new Exception(
+                $"Failed to add to Delete Movie in the database: {ex.Message}", ex);
+        }
     }
-
 }

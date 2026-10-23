@@ -66,6 +66,7 @@ builder.Services.AddScoped<IBusReceiver, BusReceiver>();
 // Register services
 builder.Services.AddScoped<IMovieRepository, MovieRepository>();
 builder.Services.AddScoped<IBusRequestRepository, BusRequestRepository>();
+builder.Services.AddScoped<IUnitOfWork, UnitOfWork>();
 
 //builder.Services.AddScoped<IMovieService, MovieService>();
 builder.Services.AddScoped<IMovieBusService, MovieBusService>();

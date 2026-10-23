@@ -56,6 +56,10 @@ namespace SampleDataAccessApi.Migrations
 
                     b.HasKey("Id");
 
+                    b.HasIndex("MessageId")
+                        .IsUnique()
+                        .HasDatabaseName("IX_BusRequest_MessageId");
+
                     b.ToTable("BusRequests");
                 });
 

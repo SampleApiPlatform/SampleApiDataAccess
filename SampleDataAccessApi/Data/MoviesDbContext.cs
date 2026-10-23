@@ -18,6 +18,7 @@ public class MoviesDbContext : DbContext
         {
             entity.HasKey(e => e.Id);
 
+            // 🔒 1. NOT NULL: MessageId MUSS einen Wert haben
             entity.Property(e => e.MessageId).IsRequired();
 
             // Enums als int (Default) oder als String für lesbare DB-Werte:
@@ -42,6 +43,11 @@ public class MoviesDbContext : DbContext
             entity.Property(e => e.UpdatedOn)
                 .IsRequired()
                 .HasDefaultValueSql("GETUTCDATE()");
+            
+            // 🔑 2. UNIQUE + INDEX: Duplikate MessageId verhindern + schneller Lookup (GetByMessageId)
+            entity.HasIndex(b => b.MessageId)
+            .IsUnique()
+            .HasDatabaseName("IX_BusRequest_MessageId");
         });
     }
 
