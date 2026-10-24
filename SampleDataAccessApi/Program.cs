@@ -11,6 +11,7 @@ using SampleApi.Services.MovieServices;
 using SampleDataAccessApi.Data;
 using SampleDataAccessApi.Extensions;
 using SampleDataAccessApi.Interfaces.MovieInterfaces;
+using SampleDataAccessApi.Validators;
 
 var builder = WebApplication.CreateBuilder(args);
 //Service 
@@ -70,7 +71,9 @@ builder.Services.AddScoped<IBusRequestService, BusRequestService>();
 //Validators they just scan an object and can be the same instance for the whole life of the application.
 //builder.Services.AddSingleton<IValidator<Movie>, MovieValidator>();
 // So registrierst du alle Fluent Validatoren auf einmal
-builder.Services.AddValidatorsFromAssemblyContaining<Program>();
+builder.Services.AddValidatorsFromAssembly(typeof(MovieValidator).Assembly);
+builder.Services.AddValidatorsFromAssembly(typeof(BusRequestValidator).Assembly);
+//builder.Services.AddValidatorsFromAssemblyContaining<Program>();
 //builder.Services.AddSingleton<IValidator<BusRequest>, BusRequestValidator>();
 
 // Service that continuosly listens to the Service Queue: it is like a background thread in our program
