@@ -1,37 +1,16 @@
-using NuGet.SampleSharedModels.Interfaces;
-using NuGet.SampleSharedModels.Results;
-using SampleDataAccessApi.Models;
+using FluentValidation;
+using SampleDataAccessApi.Models; // Importiere dein Model
 
-namespace SampleDataAccessApi.Validators;
-public class MovieValidator: IValidator<Movie>
+public class MovieValidator : AbstractValidator<Movie> // ✅ Von 'AbstractValidator' erben
 {
-    public ValidationResult Validate(Movie movie)
+    public MovieValidator()
     {
-        var validationResult = new ValidationResult()
-        {
-            IsValid = true,
-            Errors = new List<string>()
-        };
-        if (movie == null)
-        {
-            validationResult.IsValid = false;
-            validationResult.Errors.Add("The movie cannot be null");
-            return validationResult; 
-            // if the movie is null it does not make sense to check the rest , 
-            // because then for instance movie.Title will throw an exception (the title of something that is null)
-        }
-        if(string.IsNullOrWhiteSpace(movie.Title))
-        {
-            validationResult.IsValid = false;
-            validationResult.Errors.Add("The Title of the Movie cannot be empty");
-
-        }
-        if (movie.Year < 1800)
-        {
-            validationResult.IsValid = false;
-            validationResult.Errors.Add("The years must be greater than 1799");
-        }
-
-        return validationResult;
+        RuleFor(x => x.Title)
+        .NotEmpty()
+        .WithMessage("Title is required");
+        
+        RuleFor(x => x.Year)
+        .NotEmpty()
+        .WithMessage("Title is required");
     }
 }

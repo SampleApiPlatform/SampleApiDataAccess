@@ -2,6 +2,7 @@ using System.Text.Json;
 using System.Text.Json.Serialization;
 using Azure.Identity;
 using Azure.Messaging.ServiceBus;
+using FluentValidation;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
@@ -75,7 +76,9 @@ builder.Services.AddScoped<IBusRequestService, BusRequestService>();
 
 //Validators are singeltons because they do not contain properties that change with every request
 //Validators they just scan an object and can be the same instance for the whole life of the application.
-builder.Services.AddSingleton<IValidator<Movie>, MovieValidator>();
+//builder.Services.AddSingleton<IValidator<Movie>, MovieValidator>();
+// So registrierst du alle Fluent Validatoren auf einmal
+builder.Services.AddValidatorsFromAssemblyContaining<Program>();
 //builder.Services.AddSingleton<IValidator<BusRequest>, BusRequestValidator>();
 
 // Service that continuosly listens to the Service Queue: it is like a background thread in our program
