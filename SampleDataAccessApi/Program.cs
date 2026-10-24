@@ -6,21 +6,13 @@ using FluentValidation;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
-using NuGet.SampleSharedModels.Interfaces;
 using NuGet.SampleSharedModels.Interfaces.ServiceBus;
 using SampleApi.Services.MovieServices;
 using SampleDataAccessApi.Data;
 using SampleDataAccessApi.Extensions;
 using SampleDataAccessApi.Interfaces.MovieInterfaces;
-using SampleDataAccessApi.Models;
-using SampleDataAccessApi.Validators;
-
 
 var builder = WebApplication.CreateBuilder(args);
-
-
-
-
 //Service 
 
 // 1. ServiceBusClient als Singleton (lebt solange wie die App)
