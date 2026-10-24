@@ -27,6 +27,11 @@ public class BusRequestRepository : IBusRequestRepository
         return await _db.BusRequests.FindAsync(id);
     }
 
+    public async Task<BusRequest?> GetByMessageId(Guid messageId)
+    {
+        return await _db.BusRequests.Where(br=>br.MessageId == messageId).FirstAsync();
+    }
+
   
     public async Task Add(BusRequest busRequest)
     {

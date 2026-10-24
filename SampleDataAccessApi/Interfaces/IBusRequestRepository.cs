@@ -13,6 +13,7 @@ public interface IBusRequestRepository
 {
     Task<IEnumerable<BusRequest>> GetAll();
     Task<BusRequest?> GetById(string id);
+    Task<BusRequest?> GetByMessageId(Guid messageId);
     Task Add(BusRequest BusRequest);   
     Task Update(BusRequest BusRequest);
     Task Delete(BusRequest BusRequest);

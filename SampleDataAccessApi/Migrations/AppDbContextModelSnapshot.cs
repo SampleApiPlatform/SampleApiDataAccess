@@ -49,6 +49,9 @@ namespace SampleDataAccessApi.Migrations
                         .HasMaxLength(20)
                         .HasColumnType("nvarchar(20)");
 
+                    b.Property<Guid?>("MovieId")
+                        .HasColumnType("uniqueidentifier");
+
                     b.Property<DateTime>("UpdatedOn")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("datetime2")
@@ -59,6 +62,9 @@ namespace SampleDataAccessApi.Migrations
                     b.HasIndex("MessageId")
                         .IsUnique()
                         .HasDatabaseName("IX_BusRequest_MessageId");
+
+                    b.HasIndex("MovieId")
+                        .HasDatabaseName("IX_BusRequest_MovieId");
 
                     b.ToTable("BusRequests");
                 });

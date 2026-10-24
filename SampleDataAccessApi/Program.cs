@@ -71,8 +71,12 @@ builder.Services.AddScoped<IUnitOfWork, UnitOfWork>();
 //builder.Services.AddScoped<IMovieService, MovieService>();
 builder.Services.AddScoped<IMovieBusService, MovieBusService>();
 builder.Services.AddScoped<IMovieService, MovieService>();
+builder.Services.AddScoped<IBusRequestService, BusRequestService>();
 
-builder.Services.AddScoped<IValidator<Movie>, MovieValidator>();
+//Validators are singeltons because they do not contain properties that change with every request
+//Validators they just scan an object and can be the same instance for the whole life of the application.
+builder.Services.AddSingleton<IValidator<Movie>, MovieValidator>();
+//builder.Services.AddSingleton<IValidator<BusRequest>, BusRequestValidator>();
 
 // Service that continuosly listens to the Service Queue: it is like a background thread in our program
 // we do not need to implement anything in Azure Portal (define a service host) 

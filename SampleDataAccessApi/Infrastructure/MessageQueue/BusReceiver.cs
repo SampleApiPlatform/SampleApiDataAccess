@@ -1,9 +1,12 @@
 using System.Text.Json;
 using Azure.Messaging.ServiceBus;
+using Google.Api;
 using NuGet.SampleSharedModels.DTO;
 using NuGet.SampleSharedModels.DTO.ServiceBus;
 using NuGet.SampleSharedModels.Enums.EnumsServiceBus;
 using NuGet.SampleSharedModels.Interfaces.ServiceBus;
+using SampleApi.Services.MovieServices;
+using SampleDataAccessApi.Interfaces.MovieInterfaces;
 
 public class BusReceiver: IBusReceiver
 {
@@ -11,17 +14,24 @@ public class BusReceiver: IBusReceiver
     private readonly JsonSerializerOptions _jsonOptions;
     private readonly ILogger<BusReceiver> _logger;
     private readonly IConfiguration _config;
+    private readonly int _maxDeliveryCount;
+
+    private readonly IBusRequestService _busRequestService;
 
     public BusReceiver(
         ServiceBusReceiver receiver,
         JsonSerializerOptions jsonOptions,
         IConfiguration config,
+        IBusRequestService busRequestService,
         ILogger<BusReceiver> logger)
     {
         _receiver = receiver;
         _jsonOptions = jsonOptions;
         _config = config;
         _logger = logger;
+        _busRequestService = busRequestService;
+        // ✅ Robuster Zugriff mit Default
+        _maxDeliveryCount = config.GetValue<int>("ServiceBus:MaxDeliveryCount", 10);
     }
 
     /// <summary>
@@ -146,36 +156,82 @@ public class BusReceiver: IBusReceiver
             _logger.LogError(ex,
                 "Error while processing MessageId '{MessageId}', DeliveryCount={Count}. → Abandon.",
                 message.MessageId, message.ApplicationProperties.Count);
-            await _receiver.AbandonMessageAsync(message, cancellationToken: cancellationToken);
+            if (message.DeliveryCount >= _maxDeliveryCount)
+            {
+                // Letzter Versuch fehlgeschlagen → Explizit in DLQ + Fail-Status setzen
+                await MarkAsFailed(Guid.Parse(message.MessageId), ex.Message);
+                await _receiver.DeadLetterMessageAsync(
+                    message,
+                    deadLetterReason: "MaxRetriesExceeded",
+                    deadLetterErrorDescription: ex.Message,
+                    cancellationToken: cancellationToken);
+            }
+            else
+            {
+                // Noch Versuche übrig → Zurück in Queue
+                //Was AbandonMessageAsync tut
+                //Lock sofort aufgehoben: Der Message-Lock wird augenblicklich freigegeben.
+                //Nachricht bleibt in Queue: Die Nachricht geht zurück in die normale Warteschlange (nicht DLQ).
+                //DeliveryCount erhöht: Service Bus zählt DeliveryCount hoch (z.B. von 1 auf 2).
+                //Erneute Zustellung: Ein Consumer (derselbe oder ein anderer) bekommt die Nachricht erneut zugestellt – meist nach einer kurzen Backoff-Zeit.
+                await _receiver.AbandonMessageAsync(message, cancellationToken: cancellationToken);
+                //Versuch N → DeliveryCount erreicht MaxDeliveryCount (Standard: 10) → Service Bus verschiebt AUTOMATISCH in die DLQ
+                //Service Bus macht das automatisch! Du musst nicht selbst DeadLetterMessageAsync aufrufen, solange deine Queue mit einem konfigurierten MaxDeliveryCount läuft und EnableDeadLetteringOnMessageExpiration aktiv ist.
+    
+            }
         }
     }
 
-private BusPayloadDTO<T>? DeserializePayload<T>(ServiceBusReceivedMessage message)
-{
-    if (message.Body.IsEmpty || message.Body.Length == 0)
+    private async Task MarkAsFailed(Guid messageId, string exceptionMessage)
     {
-        _logger.LogWarning("Emty Payload. MessageId '{MessageId}'. Discard.",
-            message.MessageId);
-        return null;
+        const int maxLength = 2000;
+        // truncate the error message to max 2000 characters.
+        // if it is over it the database could throuw an exception because we have limited the length to 2000 characters for performance reasons.
+        if (exceptionMessage.Length > maxLength)
+        {
+            exceptionMessage = exceptionMessage[..(maxLength - 3)] + "...";
+        }
+
+        var serviceResult = await this._busRequestService.GetByMessageId(messageId);
+        if (serviceResult.Success)
+        {
+            var busRequestDTO = serviceResult.Data;
+            if (busRequestDTO != null)
+            {
+                busRequestDTO.MessageStatus = MessageStatus.Fail;
+                busRequestDTO.ErrorMessage = exceptionMessage;
+                busRequestDTO.UpdatedOn = DateTime.UtcNow;
+                await this._busRequestService.Update(busRequestDTO);                
+            }
+        }
     }
 
-    try
+    private BusPayloadDTO<T>? DeserializePayload<T>(ServiceBusReceivedMessage message)
     {
-        // Option A: Explizit als String lesen (robusteste Methode bei Fehlern)
-        string json = message.Body.ToString(); 
-        
-        // Debug-Log: Prüfen, ob das JSON wirklich ankommt
-        _logger.LogDebug("Raw JSON: {Json}", json);
-
-        var options = new JsonSerializerOptions(_jsonOptions)
+        if (message.Body.IsEmpty || message.Body.Length == 0)
         {
-            PropertyNameCaseInsensitive = true, // Wichtig!
-            ReadCommentHandling = JsonCommentHandling.Skip,
-            AllowTrailingCommas = true,
-            NumberHandling = System.Text.Json.Serialization.JsonNumberHandling.AllowReadingFromString
-        };
+            _logger.LogWarning("Emty Payload. MessageId '{MessageId}'. Discard.",
+                message.MessageId);
+            return null;
+        }
 
-        return JsonSerializer.Deserialize<BusPayloadDTO<T>>(json, options);
+        try
+        {
+            // Option A: Explizit als String lesen (robusteste Methode bei Fehlern)
+            string json = message.Body.ToString(); 
+            
+            // Debug-Log: Prüfen, ob das JSON wirklich ankommt
+            _logger.LogDebug("Raw JSON: {Json}", json);
+
+            var options = new JsonSerializerOptions(_jsonOptions)
+            {
+                PropertyNameCaseInsensitive = true, // Wichtig!
+                ReadCommentHandling = JsonCommentHandling.Skip,
+                AllowTrailingCommas = true,
+                NumberHandling = System.Text.Json.Serialization.JsonNumberHandling.AllowReadingFromString
+            };
+
+            return JsonSerializer.Deserialize<BusPayloadDTO<T>>(json, options);
         }
         catch (JsonException ex)
         {
