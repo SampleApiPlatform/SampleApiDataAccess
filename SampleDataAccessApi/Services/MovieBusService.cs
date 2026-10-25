@@ -87,7 +87,12 @@ public class MovieBusService : IMovieBusService
                 "_movieValidator.Validate "
                 );
         if (!validationResult.IsValid)
-            return ServiceResult<MovieDTORead>.Fail(validationResult.Errors);
+        {
+            var errorText = string.Join("; ",validationResult.Errors );
+            throw new Exception(errorText);            
+            //return ServiceResult<MovieDTORead>.Fail(validationResult.Errors);
+            
+        }
         await using var transaction = await _unitOfWork.BeginTransactionAsync();
         _logger.LogInformation(
                 "starting Transaction "
