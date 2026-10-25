@@ -64,6 +64,9 @@ public class MovieBusService : IMovieBusService
     }
     public async Task<ServiceResult<MovieDTORead>> Add(MovieDTORead movieDTOAdd, Guid messageId)
     {
+        _logger.LogInformation(
+                "Starting MovieBusService.Add"
+                );
         // we do that is case of duplicated MessagesIds to avoid to recover the entity in the DB
         var movieDTOReadForDuplicatedMessageId = movieDTOAdd;
         // we need to this otherwise the movie is inserted in the table without an Id
@@ -75,15 +78,27 @@ public class MovieBusService : IMovieBusService
         //var serviceResult = new ServiceResult<MovieDTORead>();
         // map               
         var movieEntity = MovieMapping.MapFromMovieDTOAddToMovieEntity(movieDTOAdd1);
+        _logger.LogInformation(
+                "After MapFromMovieDTOAddToMovieEntity "
+                );
         // validate
         var validationResult = _movieValidator.Validate(movieEntity);
+        _logger.LogInformation(
+                "_movieValidator.Validate "
+                );
         if (!validationResult.IsValid)
             return ServiceResult<MovieDTORead>.Fail(validationResult.Errors);
         await using var transaction = await _unitOfWork.BeginTransactionAsync();
+        _logger.LogInformation(
+                "starting Transaction "
+                );
         try
         {
            //EF Core tracks the entity that we have just added and it assigns an ID (with SQL Server)
             await _movieRepository.Add(movieEntity);  
+            _logger.LogInformation(
+                "Added Movie "
+                );
             var dtoRead = MovieMapping.MapFromMovieEntityToMovieDTORead(movieEntity); 
             // provide the 
             movieDTOReadForDuplicatedMessageId.Id = dtoRead.Id;
@@ -101,7 +116,10 @@ public class MovieBusService : IMovieBusService
             var validationBusResult = busRequestValidator.Validate(busRequest);
             if (validationBusResult.IsValid)
             {
-                await _busRequestRepository.Add(busRequest); 
+                await _busRequestRepository.Add(busRequest);
+                _logger.LogInformation(
+                "Added busRequest "
+                );
                 // 3. All good → Commit
                 await transaction.CommitAsync();
                 return ServiceResult<MovieDTORead>.Ok(dtoRead);                    
