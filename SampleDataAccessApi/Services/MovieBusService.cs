@@ -93,14 +93,18 @@ public class MovieBusService : IMovieBusService
             //return ServiceResult<MovieDTORead>.Fail(validationResult.Errors);
             
         }
-        await using var transaction = await _unitOfWork.BeginTransactionAsync();
-        _logger.LogInformation(
-                "starting Transaction "
-                );
+        //await using var transaction = await _unitOfWork.BeginTransactionAsync();
+        //_logger.LogInformation(
+        //        "starting Transaction "
+        //        );
+        //var dbContext = this._unitOfWork.GetDbContext();
         try
         {
            //EF Core tracks the entity that we have just added and it assigns an ID (with SQL Server)
-            await _movieRepository.Add(movieEntity);  
+            
+            _unitOfWork.Add(movieEntity);
+            //dbContext.Add(movieEntity);
+            //await _movieRepository.Add(movieEntity);              
             _logger.LogInformation(
                 "Added Movie "
                 );
@@ -121,12 +125,14 @@ public class MovieBusService : IMovieBusService
             var validationBusResult = busRequestValidator.Validate(busRequest);
             if (validationBusResult.IsValid)
             {
-                await _busRequestRepository.Add(busRequest);
+                _unitOfWork.Add(busRequest);
+                //await _busRequestRepository.Add(busRequest);
                 _logger.LogInformation(
                 "Added busRequest "
                 );
                 // 3. All good → Commit
-                await transaction.CommitAsync();
+                //await transaction.CommitAsync();
+                await _unitOfWork.SaveAllAsync();
                 return ServiceResult<MovieDTORead>.Ok(dtoRead);                    
             }
             else
@@ -145,12 +151,15 @@ public class MovieBusService : IMovieBusService
             {
                 _logger.LogWarning("MessageId {MessageId} already exists (duplicate). Treating as success.", messageId);
                 // remove the movie that we have added.
-                await transaction.RollbackAsync();
+                 _unitOfWork.ClearAll();
+                //await transaction.RollbackAsync();
                 return ServiceResult<MovieDTORead>.Ok(movieDTOReadForDuplicatedMessageId); // Erfolg melden!
             }
 
             // 2. FALL: Echter Fehler → Rollback und Fehler weitergeben
-            await transaction.RollbackAsync();
+            //dbContext.ChangeTracker.Clear();
+            _unitOfWork.ClearAll();
+            //await transaction.RollbackAsync();
             _logger.LogError(ex, "Failed to add Movie for MessageId {MessageId}", messageId);
             throw; // Wirf die Exception weiter, damit der Receiver sie fängt
         }
@@ -182,12 +191,20 @@ public class MovieBusService : IMovieBusService
         var validationResult = _movieValidator.Validate(movieEntity);
         if (!validationResult.IsValid)
             return ServiceResult<MovieDTORead>.Fail(validationResult.Errors); 
-        await using var transaction = await _unitOfWork.BeginTransactionAsync();
+        //
         try
         {
-           //EF Core tracks the entity that we have just added
-           await _movieRepository.Update(movieEntity); //<-
-           var dtoRead = MovieMapping.MapFromMovieEntityToMovieDTORead(movieEntity);      
+           //EF Core tracks the entity that we have just added and it assigns an ID (with SQL Server)
+            
+            _unitOfWork.Update(movieEntity);
+            //dbContext.Add(movieEntity);
+            //await _movieRepository.Add(movieEntity);              
+            _logger.LogInformation(
+                "Added Movie "
+                );
+            var dtoRead = MovieMapping.MapFromMovieEntityToMovieDTORead(movieEntity); 
+            // provide the 
+            //movieDTOReadForDuplicatedMessageId.Id = dtoRead.Id;
             // create a record in a busRequest table  
             var busRequest = new BusRequest()
             {
@@ -195,15 +212,21 @@ public class MovieBusService : IMovieBusService
                 // inside this MessageData we have the id that we can use to lookup at the Movies table
                 MessageData = JsonSerializer.Serialize(dtoRead),
                 MessageId = messageId,
+                MovieId = Guid.Parse(dtoRead.Id),
                 MessageStatus = MessageStatus.Success
             }; 
             var busRequestValidator = new BusRequestValidator();
             var validationBusResult = busRequestValidator.Validate(busRequest);
             if (validationBusResult.IsValid)
             {
-                await _busRequestRepository.Add(busRequest); 
+                _unitOfWork.Add(busRequest);
+                //await _busRequestRepository.Add(busRequest);
+                _logger.LogInformation(
+                "Added busRequest "
+                );
                 // 3. All good → Commit
-                await transaction.CommitAsync();
+                //await transaction.CommitAsync();
+                await _unitOfWork.SaveAllAsync();
                 return ServiceResult<MovieDTORead>.Ok(dtoRead);                    
             }
             else
@@ -222,12 +245,15 @@ public class MovieBusService : IMovieBusService
             {
                 _logger.LogWarning("MessageId {MessageId} already exists (duplicate). Treating as success.", messageId);
                 // remove the movie that we have added.
-                await transaction.RollbackAsync();
+                 _unitOfWork.ClearAll();
+                //await transaction.RollbackAsync();
                 return ServiceResult<MovieDTORead>.Ok(movieDTOUpdate); // Erfolg melden!
             }
 
             // 2. FALL: Echter Fehler → Rollback und Fehler weitergeben
-            await transaction.RollbackAsync();
+            //dbContext.ChangeTracker.Clear();
+            _unitOfWork.ClearAll();
+            //await transaction.RollbackAsync();
             _logger.LogError(ex, "Failed to add Movie for MessageId {MessageId}", messageId);
             throw; // Wirf die Exception weiter, damit der Receiver sie fängt
         }   
@@ -238,19 +264,26 @@ public class MovieBusService : IMovieBusService
         //var deleted = await _movieRepository.Delete(id);
         //return deleted;
 
-        var movie = await _movieRepository.GetById(movieDTODelete.Id);
-        if (movie == null)
+        var movieEntity = await _movieRepository.GetById(movieDTODelete.Id);
+        if (movieEntity == null)
             return ServiceResult<bool>.Fail(["Entity Not Found"]);
         // Optional: cross-entity validation
         //var validation = _movieValidator.Validate(movie);
         //if (!validation.IsValid)
         //    return ServiceResult<bool>.Fail(validation.Errors);
-        await using var transaction = await _unitOfWork.BeginTransactionAsync();
         try
         {
-           //EF Core tracks the entity that we have just added
-           await _movieRepository.Delete(movie);//<-
-           var dtoRead = MovieMapping.MapFromMovieEntityToMovieDTORead(movie);      
+           //EF Core tracks the entity that we have just added and it assigns an ID (with SQL Server)
+            
+            _unitOfWork.Delete(movieEntity);
+            //dbContext.Add(movieEntity);
+            //await _movieRepository.Add(movieEntity);              
+            _logger.LogInformation(
+                "Added Movie "
+                );
+            var dtoRead = MovieMapping.MapFromMovieEntityToMovieDTORead(movieEntity); 
+            // provide the 
+            //movieDTOReadForDuplicatedMessageId.Id = dtoRead.Id;
             // create a record in a busRequest table  
             var busRequest = new BusRequest()
             {
@@ -258,16 +291,22 @@ public class MovieBusService : IMovieBusService
                 // inside this MessageData we have the id that we can use to lookup at the Movies table
                 MessageData = JsonSerializer.Serialize(dtoRead),
                 MessageId = messageId,
+                MovieId = Guid.Parse(dtoRead.Id),
                 MessageStatus = MessageStatus.Success
             }; 
             var busRequestValidator = new BusRequestValidator();
             var validationBusResult = busRequestValidator.Validate(busRequest);
             if (validationBusResult.IsValid)
             {
-                await _busRequestRepository.Add(busRequest); 
+                _unitOfWork.Add(busRequest);
+                //await _busRequestRepository.Add(busRequest);
+                _logger.LogInformation(
+                "Added busRequest "
+                );
                 // 3. All good → Commit
-                await transaction.CommitAsync();
-                return ServiceResult<bool>.Ok(true);                  
+                //await transaction.CommitAsync();
+                await _unitOfWork.SaveAllAsync();
+                return ServiceResult<bool>.Ok(true);                    
             }
             else
             {
@@ -285,15 +324,18 @@ public class MovieBusService : IMovieBusService
             {
                 _logger.LogWarning("MessageId {MessageId} already exists (duplicate). Treating as success.", messageId);
                 // remove the movie that we have added.
-                await transaction.RollbackAsync();
+                 _unitOfWork.ClearAll();
+                //await transaction.RollbackAsync();
                 return ServiceResult<bool>.Ok(true); // Erfolg melden!
             }
 
             // 2. FALL: Echter Fehler → Rollback und Fehler weitergeben
-            await transaction.RollbackAsync();
+            //dbContext.ChangeTracker.Clear();
+            _unitOfWork.ClearAll();
+            //await transaction.RollbackAsync();
             _logger.LogError(ex, "Failed to add Movie for MessageId {MessageId}", messageId);
             throw; // Wirf die Exception weiter, damit der Receiver sie fängt
-        }
+        } 
     }
 
     private static bool IsDuplicateKeyError(DbUpdateException ex)
