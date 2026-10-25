@@ -33,6 +33,9 @@ namespace SampleDataAccessApi.Migrations
                         .HasColumnType("datetime2")
                         .HasDefaultValueSql("GETUTCDATE()");
 
+                    b.Property<string>("ErrorMessage")
+                        .HasColumnType("nvarchar(max)");
+
                     b.Property<string>("MessageAction")
                         .IsRequired()
                         .HasMaxLength(20)
@@ -50,6 +53,7 @@ namespace SampleDataAccessApi.Migrations
                         .HasColumnType("nvarchar(20)");
 
                     b.Property<Guid?>("MovieId")
+                        .IsRequired()
                         .HasColumnType("uniqueidentifier");
 
                     b.Property<DateTime>("UpdatedOn")

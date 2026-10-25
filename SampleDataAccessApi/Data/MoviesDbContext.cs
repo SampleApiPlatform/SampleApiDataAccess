@@ -35,6 +35,13 @@ public class MoviesDbContext : DbContext
             entity.Property(e => e.MessageData)
                 .HasColumnType("nvarchar(max)")
                 .IsRequired(false);
+            
+            entity.Property(e => e.MovieId).IsRequired();
+            
+            entity.Property(e => e.ErrorMessage)
+                .HasColumnType("nvarchar(max)")
+                .IsRequired(false);
+                //.HasMaxLength(2000); // Begrenzung, um DB-Performance nicht zu stark zu belasten;
 
             entity.Property(e => e.CreatedOn)
                 .IsRequired()
@@ -53,8 +60,8 @@ public class MoviesDbContext : DbContext
             entity.HasIndex(b => b.MovieId)
             .HasDatabaseName("IX_BusRequest_MovieId");
 
-            entity.Property(b => b.ErrorMessage)
-            .HasMaxLength(2000); // Begrenzung, um DB-Performance nicht zu stark zu belasten
+            //entity.Property(b => b.ErrorMessage)
+            //.HasMaxLength(2000); // Begrenzung, um DB-Performance nicht zu stark zu belasten
         });
     }
 
