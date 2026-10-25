@@ -2,15 +2,16 @@ using System.Text.Json;
 using System.Text.Json.Serialization;
 using Azure.Identity;
 using Azure.Messaging.ServiceBus;
-using FluentValidation;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
+using NuGet.SampleSharedModels.Interfaces;
 using NuGet.SampleSharedModels.Interfaces.ServiceBus;
 using SampleApi.Services.MovieServices;
 using SampleDataAccessApi.Data;
 using SampleDataAccessApi.Extensions;
 using SampleDataAccessApi.Interfaces.MovieInterfaces;
+using SampleDataAccessApi.Models;
 using SampleDataAccessApi.Validators;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -71,10 +72,11 @@ builder.Services.AddScoped<IBusRequestService, BusRequestService>();
 //Validators they just scan an object and can be the same instance for the whole life of the application.
 //builder.Services.AddSingleton<IValidator<Movie>, MovieValidator>();
 // So registrierst du alle Fluent Validatoren auf einmal
-builder.Services.AddValidatorsFromAssembly(typeof(MovieValidator).Assembly);
-builder.Services.AddValidatorsFromAssembly(typeof(BusRequestValidator).Assembly);
+//builder.Services.AddValidatorsFromAssembly(typeof(MovieValidator).Assembly);
+//builder.Services.AddValidatorsFromAssembly(typeof(BusRequestValidator).Assembly);
 //builder.Services.AddValidatorsFromAssemblyContaining<Program>();
-//builder.Services.AddSingleton<IValidator<BusRequest>, BusRequestValidator>();
+builder.Services.AddSingleton<IValidator<BusRequest>, BusRequestValidator>();
+builder.Services.AddSingleton<IValidator<Movie>, MovieValidator>();
 
 // Service that continuosly listens to the Service Queue: it is like a background thread in our program
 // we do not need to implement anything in Azure Portal (define a service host) 

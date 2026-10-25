@@ -15,7 +15,7 @@ static class BusRequestMapping
             MessageAction = busRequest.MessageAction,
             MessageId = busRequest.MessageId,
             MessageStatus = busRequest.MessageStatus,
-            MessageData = string.IsNullOrEmpty(busRequest.MessageData) ? JsonSerializer.Deserialize<MovieDTORead>(busRequest.MessageData): null,
+            MessageData = !string.IsNullOrEmpty(busRequest.MessageData) ? JsonSerializer.Deserialize<MovieDTORead>(busRequest.MessageData): null,
             CreatedOn = busRequest.CreatedOn,
             UpdatedOn = busRequest.UpdatedOn
         };

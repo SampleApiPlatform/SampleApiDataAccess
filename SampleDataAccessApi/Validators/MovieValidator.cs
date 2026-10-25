@@ -1,16 +1,31 @@
-using FluentValidation;
+using NuGet.SampleSharedModels.Interfaces;
+using NuGet.SampleSharedModels.Results;
 using SampleDataAccessApi.Models; // Importiere dein Model
 
-public class MovieValidator : AbstractValidator<Movie> // ✅ Von 'AbstractValidator' erben
+public class MovieValidator : IValidator<Movie>
 {
-    public MovieValidator()
+    public ValidationResult Validate(Movie movie)
     {
-        RuleFor(x => x.Title)
-        .NotEmpty()
-        .WithMessage("Title is required");
-        
-        RuleFor(x => x.Year)
-        .NotEmpty()
-        .WithMessage("Title is required");
+        var validationResult = new ValidationResult();
+        if (string.IsNullOrEmpty(movie.Title))
+        {
+            validationResult.Errors.Add("The Title of the Movie cannot be empty");
+        }
+
+        if (movie.Year > 0 && movie.Year < DateTime.Now.Year)
+        {
+            validationResult.Errors.Add("The Title of the Movie cannot be empty");
+        }
+
+        if (validationResult.Errors.Count == 0)
+        {
+            validationResult.IsValid = true;
+        }
+        else
+        {
+            validationResult.IsValid = false;
+        }
+        return validationResult;
+
     }
 }
