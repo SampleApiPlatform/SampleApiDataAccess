@@ -12,9 +12,9 @@ public class MovieValidator : IValidator<Movie>
             validationResult.Errors.Add("The Title of the Movie cannot be empty");
         }
 
-        if (movie.Year > 0 && movie.Year < DateTime.Now.Year)
+        if (movie.Year < 0 && movie.Year > DateTime.Now.Year)
         {
-            validationResult.Errors.Add("The Title of the Movie cannot be empty");
+            validationResult.Errors.Add($"The Year has to be between 0 and {DateTime.Now.Year}");
         }
 
         if (validationResult.Errors.Count == 0)
