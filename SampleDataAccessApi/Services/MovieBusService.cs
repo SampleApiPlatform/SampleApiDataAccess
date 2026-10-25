@@ -79,7 +79,7 @@ public class MovieBusService : IMovieBusService
         // map               
         var movieEntity = MovieMapping.MapFromMovieDTOAddToMovieEntity(movieDTOAdd1);
         _logger.LogInformation(
-                "After MapFromMovieDTOAddToMovieEntity "
+                $"After MapFromMovieDTOAddToMovieEntity: title: {movieEntity.Title} year: {movieEntity.Year}"
                 );
         // validate
         var validationResult = _movieValidator.Validate(movieEntity);
