@@ -1,3 +1,4 @@
+using System.Diagnostics;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -20,6 +21,8 @@ public class MoviesController : ControllerBase
     private readonly IMovieService _movieService;
     private readonly ILogger<MoviesController> _logger;
     private readonly string controllerName = string.Empty;
+
+        private static readonly ActivitySource MyActivitySource = new("sampleapiplatform");
 
     public MoviesController(
                             //IMovieService movieService, 
@@ -85,6 +88,8 @@ public class MoviesController : ControllerBase
     {
         try
         {
+            // 1. Erzeuge einen eigenen Span für die fachliche Logik
+            using var activity = MyActivitySource.StartActivity("SampleDataAccessApi.Add");
             var serviceResult =await _movieService.Add(movieDTOAdd);
             if (!serviceResult.Success)
             {
@@ -100,6 +105,10 @@ public class MoviesController : ControllerBase
             //It builds an HTTP 201 Created response and includes:
             //the Location header (URL of the newly created resource)
             //the response body (your DTO)
+
+            // 2. Setze die Correlation ID als Tag
+            activity?.SetTag("movie_id", serviceResult.Data?.Id); 
+
             _logger.LogInformation("MovieController.Create Movie Created: {Id}", serviceResult.Data?.Id);
             return Ok(serviceResult);
             //return CreatedAtAction(nameof(GetById), new { id = serviceResult.Data!.Id }, serviceResult.Data);
